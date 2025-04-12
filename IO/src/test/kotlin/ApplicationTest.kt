@@ -18,4 +18,14 @@ class ApplicationTest {
         }
     }
 
+    @Test
+    fun testHealthCheck() = testApplication {
+        application {
+            module()
+        }
+        client.get("/healthcheck").apply {
+            assertEquals(HttpStatusCode.OK, status)
+        }
+    }
+
 }
