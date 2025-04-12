@@ -10,4 +10,10 @@ fun Application.configureRouting() {
             call.respondText("Hello World!")
         }
     }
+
+    routing {
+        get("/healthcheck") {
+            call.respondText("HEALTHCHECK")
+        }
+    }
 }
