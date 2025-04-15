@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: wiktor
+      POSTGRES_PASSWORD: tajnehaslo
+      POSTGRES_DB: moja_baza
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./app/server/IO  # Ścieżka do backendu
+    container_name: kotlin-backend
+    depends_on:
+      - db
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/moja_baza
+      DB_USER: wiktor
+      DB_PASSWORD: tajnehaslo
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./app/client  # Ścieżka do folderu frontendu
+    container_name: vite-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
