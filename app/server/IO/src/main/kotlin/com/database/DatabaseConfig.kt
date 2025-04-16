@@ -7,18 +7,12 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import io.github.cdimascio.dotenv.dotenv
 
 fun connectToDatabase() {
-    // Konfiguracja bazy
-//    val databaseUrl = System.getenv("DB_URL") ?: "jdbc:postgresql://localhost:5432/moja_baza"
-//    val databaseUser = System.getenv("DB_USER") ?: "wiktor"
-//    val databasePassword = System.getenv("DB_PASSWORD") ?: "tajnehaslo"
-
     val dotenv = dotenv()
 
     val databaseUrl = dotenv["DB_URL"] ?: "jdbc:postgresql://localhost:5432/moja_baza"
     val databaseUser = dotenv["DB_USER"] ?: "wiktor"
     val databasePassword = dotenv["DB_PASSWORD"] ?: "tajnehaslo"
 
-    // Łączenie z bazą
     Database.connect(
         url = databaseUrl,
         driver = "org.postgresql.Driver",
