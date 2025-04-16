@@ -1,4 +1,7 @@
-## Application usage
+Opis jak uruchomić sam backend jest w folderze app/server.
+
+
+## Opis użycia
 
 1. Build
 ```bash
