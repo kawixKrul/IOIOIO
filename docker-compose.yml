@@ -16,7 +16,7 @@ services:
 
   backend:
     build:
-      context: ./app/server/IO  # Ścieżka do backendu
+      context: ./app/server/IO # Ścieżka do backendu
     container_name: kotlin-backend
     depends_on:
       - db
@@ -29,12 +29,25 @@ services:
 
   frontend:
     build:
-      context: ./app/client  # Ścieżka do folderu frontendu
+      context: ./app/client # Ścieżka do folderu frontendu
     container_name: vite-frontend
     ports:
       - "3000:80"
-    depends_on:
-      - backend
+    develop:
+      watch:
+        - action: sync
+          path: ./app/client/src
+          target: /app/src
+          ignore:
+            - node_modules/
+
+        - action: sync
+          path: ./app/client/package.json
+          target: /app/package.json
+
+        - action: rebuild
+          path: ./app/client/package.json
+          target: /app/package.json
 
 volumes:
   pgdata:

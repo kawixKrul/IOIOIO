@@ -1,10 +1,12 @@
-FROM node:23 AS build_app
+FROM node:23-alpine AS build_app
 
 WORKDIR /client_app
 
-COPY . .
+COPY package*.json ./
 
 RUN npm ci
+
+COPY . .
 
 RUN npx vite build
 
