@@ -9,12 +9,28 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useActionState, useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 export function LoginForm({
     className,
     onToggleForm,
     ...props
 }: React.ComponentPropsWithoutRef<"div"> & { onToggleForm: () => void }) {
+    const [login, setLogin] = useState("")
+    const [password, setPassword] = useState("")
+    const navigate = useNavigate()
+
+    const checkCredentials = () => {
+        if (login === "user" && password === "qwe") {
+            navigate("/user")
+        } else if (login === "promotor" && password === "qwe") {
+            navigate("/overseer")
+        } else {
+            alert("Invalid credentials")
+        }
+    }
+
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
             <Card>
@@ -33,6 +49,8 @@ export function LoginForm({
                                     id="email"
                                     type="email"
                                     placeholder="name@agh.pl"
+                                    value={login}
+                                    onChange={(e) => setLogin(e.target.value)}
                                     required
                                 />
                             </div>
@@ -46,9 +64,14 @@ export function LoginForm({
                                         Forgot your password?
                                     </a>
                                 </div>
-                                <Input id="password" type="password" required />
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    required value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
                             </div>
-                            <Button type="submit" className="w-full">
+                            <Button type="submit" className="w-full" onClick={checkCredentials}>
                                 Login
                             </Button>
                             <Button type="button" onClick={onToggleForm} className="w-full">
