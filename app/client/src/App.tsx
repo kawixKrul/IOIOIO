@@ -1,15 +1,12 @@
-import { useState } from 'react'
-import './App.css'
-import { Button } from './components/ui/button'
+import { LandingPage } from './components/landing-page'
+import { LoginForm } from './components/login-form'
+import { RegisterForm } from './components/register-form'
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-svh">
-      <Button onClick={() => setCount(count + 1)}>{count}</Button>
+    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+      <LandingPage />
     </div>
   )
 }
-
-export default App
