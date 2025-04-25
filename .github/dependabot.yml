@@ -5,7 +5,17 @@
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
+  - package-ecosystem: "npm" # See documentation for possible values
+    directory: "/app/client" # Location of package manifests
+    schedule:
+      interval: "monthly"
+
+  - package-ecosystem: "maven" # See documentation for possible values
+    directory: "/app/server/IO" # Location of package manifests
+    schedule:
+      interval: "monthly"
+
+  - package-ecosystem: "docker" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
       interval: "monthly"
