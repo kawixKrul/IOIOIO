@@ -50,11 +50,11 @@ fun Application.module() {
     studentService.deleteStudent(3)
     println("Student deleted.")
 
-    println("All students:")
-    studentService.getAllStudents().forEach { student ->
-        println(
-            "ID: ${student[Students.id]}, Email: ${student[Students.mail]}, Password: ${student[Students.password]}, " +
-                    "Name: ${student[Students.name]}, Surname: ${student[Students.surname]}"
-        )
-    }
+//    println("All students:")
+//    studentService.getAllStudents().forEach { student ->
+//        println(
+//            "ID: ${student[Students.id]}, Email: ${student[Students.mail]}, Password: ${student[Students.password]}, " +
+//                    "Name: ${student[Students.name]}, Surname: ${student[Students.surname]}"
+//        )
+//    }
 }

@@ -1,5 +1,7 @@
 package com
 
+import com.routers.loginRoutes
+import com.routers.protectedRoutes
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -19,5 +21,11 @@ fun Application.configureRouting(
         }
 
         registrationRoutes(appBaseUrl, mailgunApiKey, mailgunDomain)
+
+        loginRoutes()
+
+        protectedRoutes()
     }
+
 }
+
