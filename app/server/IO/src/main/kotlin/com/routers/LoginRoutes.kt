@@ -5,7 +5,6 @@ package com.routers
 import com.database.table.Sessions
 import com.database.table.Users
 import com.hashPassword
-import com.verifyPassword
 import io.ktor.http.*
 import io.ktor.server.plugins.*
 import io.ktor.server.request.*
@@ -47,7 +46,7 @@ fun Route.loginRoutes() {
 
         // Verify password
         val storedHash = user[Users.passwordHash]
-        if (!verifyPassword(password, storedHash)) {
+        if (storedHash != hashPassword(password)) {
             call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
             return@post
         }
@@ -90,6 +89,16 @@ fun Route.loginRoutes() {
     }
 
 
+    post("/logout") {
+        val sessionToken = call.request.cookies["session_token"]
+        if (sessionToken != null) {
+            transaction {
+                Sessions.deleteWhere { Sessions.token eq sessionToken }
+            }
+            call.response.cookies.appendExpired("session_token", path = "/")
+        }
+        call.respond(HttpStatusCode.OK, "Logged out")
+    }
 
 
 }

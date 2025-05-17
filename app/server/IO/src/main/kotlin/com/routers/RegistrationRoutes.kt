@@ -13,7 +13,6 @@ import java.time.LocalDateTime
 import com.database.table.Users
 import com.database.table.ActivationTokens
 import com.database.table.Students
-import com.database.table.Supervisors
 import com.hashPassword
 import com.service.sendActivationEmail
 import org.jetbrains.exposed.sql.deleteWhere
@@ -29,8 +28,7 @@ data class RegistrationRequest(
     val password: String,
     val name: String,
     val surname: String,
-    val role: String,
-    val expertiseField: String? = null
+    val role: String
 )
 
 fun Route.registrationRoutes(appBaseUrl: String, mailgunApiKey: String, mailgunDomain: String) {
@@ -38,21 +36,7 @@ fun Route.registrationRoutes(appBaseUrl: String, mailgunApiKey: String, mailgunD
         val req = call.receive<RegistrationRequest>()
         val email = req.email.trim().lowercase()
 
-        val isStudentEmail = email.contains("@student.agh.edu.pl")
-        // For testing purposes, no check here because we would need @agh.edu.pl mail
-        // val isSupervisorEmail = email.contains("@agh.edu.pl") && !isStudentEmail
-        val isSupervisorEmail = !isStudentEmail
-
-        if (!isStudentEmail && !isSupervisorEmail) {
-            call.respond(HttpStatusCode.BadRequest, "Invalid email domain for registration")
-            return@post
-        }
-
-        if (isSupervisorEmail && req.expertiseField.isNullOrBlank()) {
-            call.respond(HttpStatusCode.BadRequest, "Expertise field is required for supervisors")
-            return@post
-        }
-
+        // Check for existing user outside the transaction block
         val userExists = transaction {
             Users.select { Users.email eq email }.count() > 0
         }
@@ -62,29 +46,26 @@ fun Route.registrationRoutes(appBaseUrl: String, mailgunApiKey: String, mailgunD
             return@post
         }
 
+        // Now create the user and activation token in a single transaction
         val (userId, token) = transaction {
+            // Create the user
             val now = LocalDateTime.now()
             val userId = Users.insert {
                 it[this.email] = email
                 it[this.passwordHash] = hashPassword(req.password)
                 it[this.isActive] = false
                 it[this.createdAt] = now
-                it[this.role] = if (isStudentEmail) "student" else "supervisor"
+                it[this.role] = "student"
                 it[this.name] = req.name
                 it[this.surname] = req.surname
             } get Users.id
 
-            if (isStudentEmail) {
-                Students.insert {
-                    it[this.userId] = userId
-                }
-            } else if (isSupervisorEmail) {
-                Supervisors.insert {
-                    it[this.userId] = userId
-                    it[this.expertiseField] = req.expertiseField!!
-                }
+            // Add the student record
+            Students.insert {
+                it[this.userId] = userId
             }
 
+            // Create activation token
             val token = UUID.randomUUID().toString()
             ActivationTokens.insert {
                 it[ActivationTokens.userId] = userId
@@ -92,14 +73,18 @@ fun Route.registrationRoutes(appBaseUrl: String, mailgunApiKey: String, mailgunD
                 it[ActivationTokens.expiresAt] = now.plusDays(1)
             }
 
+            // Return both the user ID and the token
             userId.value to token
         }
 
+        // Send the activation email (outside transaction for better performance)
         val activationLink = "$appBaseUrl/activate?token=$token"
         sendActivationEmail(mailgunApiKey, mailgunDomain, email, activationLink)
 
         call.respond(HttpStatusCode.OK, "Registration successful. Check your email to activate your account.")
     }
+
+
 
     get("/activate") {
         val token = call.request.queryParameters["token"]

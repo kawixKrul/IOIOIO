@@ -2,7 +2,6 @@ package com
 
 import com.service.StudentService
 import com.database.connectToDatabase
-import com.database.createInitialAdmin
 import com.database.createTables
 import com.database.table.Students
 import com.database.table.Users
@@ -42,13 +41,14 @@ fun Application.module() {
     createTables()
     println("Database connected and all tables are created.")
 
-    createInitialAdmin()
-    println("Initial admin created. Email: admin@agh.edu.pl, Password: admin123")
-
     val studentService = StudentService()
+
     // Sample usage (uncomment as needed)
     // studentService.addStudent("bialecki@example.com", "marcinbialecki1", "Marcin", "Białecki")
     // println("New student added.")
+
+    studentService.deleteStudent(3)
+    println("Student deleted.")
 
 //    println("All students:")
 //    studentService.getAllStudents().forEach { student ->
