@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../2/ComputationalGeometry" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../GitArchive/Java-Fun" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../ASD" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../AT-lab" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../Algocja" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../ComputationalGeometry" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../Erlang" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../EvolutionSimulation" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../IOIO/IOIOIO" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../Julia" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../Kirkpatrick-PointLocationMethod" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../MNIST-Digit-Recognition" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../Matrix-Algorithms" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../PO_2023_WTO1300_KALEBA" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../TK" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../TWproj/concurrent-gaussian-elimination" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../elevator_system" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../exercises" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../java-project-assignment" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../sztuczna-inteligencja" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../web_app" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../web_app/pollutiondb/deps/heroicons" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../michaskawageo/algo-geometryczne" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../tekst/AT-lab" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../tekst/AT-lab/github.com/MarcinCiura/AT-lab" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../temp/Algorytmy-Geometryczne" vcs="Git" />
+  </component>
+</project>

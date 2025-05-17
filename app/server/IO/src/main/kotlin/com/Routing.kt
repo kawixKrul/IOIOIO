@@ -3,17 +3,21 @@ package com
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import com.routers.registrationRoutes
 
-fun Application.configureRouting() {
+fun Application.configureRouting(
+    appBaseUrl: String,
+    mailgunApiKey: String,
+    mailgunDomain: String
+) {
     routing {
         get("/") {
             call.respondText("Hello World!")
         }
-    }
-
-    routing {
         get("/healthcheck") {
             call.respondText("HEALTHCHECK")
         }
+
+        registrationRoutes(appBaseUrl, mailgunApiKey, mailgunDomain)
     }
 }

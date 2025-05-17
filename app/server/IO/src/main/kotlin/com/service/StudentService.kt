@@ -1,4 +1,4 @@
-package com.database.service
+package com.service
 
 import com.database.table.Students
 import org.jetbrains.exposed.sql.*
