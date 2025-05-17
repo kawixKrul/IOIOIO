@@ -27,12 +27,17 @@ fun <T> dbTransaction(block: () -> T): T {
 
 fun createTables() {
     transaction {
-        SchemaUtils.create(Students)
-        SchemaUtils.create(Admins)
-        SchemaUtils.create(Applications)
-        SchemaUtils.create(Tags)
-        SchemaUtils.create(Theses)
-        SchemaUtils.create(ThesesTopics)
-        SchemaUtils.create(Supervisors)
+        SchemaUtils.createMissingTablesAndColumns(
+            Users,
+            ActivationTokens,
+            Students,
+            Admins,
+            Applications,
+            Tags,
+            Theses,
+            ThesesTopics,
+            Supervisors
+        )
     }
 }
+
