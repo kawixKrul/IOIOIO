@@ -89,16 +89,6 @@ fun Route.loginRoutes() {
     }
 
 
-    post("/logout") {
-        val sessionToken = call.request.cookies["session_token"]
-        if (sessionToken != null) {
-            transaction {
-                Sessions.deleteWhere { Sessions.token eq sessionToken }
-            }
-            call.response.cookies.appendExpired("session_token", path = "/")
-        }
-        call.respond(HttpStatusCode.OK, "Logged out")
-    }
 
 
 }
