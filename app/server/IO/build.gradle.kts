@@ -46,6 +46,12 @@ dependencies {
     implementation("org.postgresql:postgresql:42.7.2")
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
 
+    implementation("io.ktor:ktor-server-auth:2.4.1")
+    implementation("io.ktor:ktor-server-auth-jwt:2.4.1")
+    implementation("io.ktor:ktor-server-sessions:2.4.1")
+    implementation("io.ktor:ktor-server-content-negotiation:2.4.1")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.4.1")
+
     // Add these for Mailgun/email HTTP requests:
     implementation("io.ktor:ktor-client-core:$ktor_version")
     implementation("io.ktor:ktor-client-cio:$ktor_version")

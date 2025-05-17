@@ -36,7 +36,8 @@ fun createTables() {
             Tags,
             Theses,
             ThesesTopics,
-            Supervisors
+            Supervisors,
+            Sessions
         )
     }
 }
