@@ -50,9 +50,6 @@ fun Application.module() {
     // studentService.addStudent("bialecki@example.com", "marcinbialecki1", "Marcin", "Białecki")
     // println("New student added.")
 
-    studentService.deleteStudent(3)
-    println("Student deleted.")
-
 //    println("All students:")
 //    studentService.getAllStudents().forEach { student ->
 //        println(
