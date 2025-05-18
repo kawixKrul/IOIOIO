@@ -1,8 +1,6 @@
 package com.routers
 
 import com.database.table.*
-import com.utils.ThesisTopicRequest
-import com.utils.UserRequest
 import com.utils.requireSupervisor
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -13,6 +11,23 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
+@Serializable
+data class SupervisorRequest(
+    val id: Int,
+    val email: String,
+    val name: String,
+    val surname: String,
+    val expertiseField: String? = null
+)
+
+@Serializable
+data class ThesisTopicRequest(
+    val title: String,
+    val description: String,
+    val degreeLevel: String, // eg. "MSc", "BSc"
+    val availableSlots: Int,
+    val tags: List<String>
+)
 
 fun Route.supervisorRoutes() {
     get("/supervisor/profile") {
@@ -22,7 +37,7 @@ fun Route.supervisorRoutes() {
             (Users innerJoin Supervisors)
                 .select { Users.id eq userId }
                 .map {
-                    UserRequest(
+                    SupervisorRequest(
                         id = it[Users.id].value,
                         email = it[Users.email],
                         name = it[Users.name],

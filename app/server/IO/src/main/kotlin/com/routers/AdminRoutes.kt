@@ -3,13 +3,23 @@ package com.routers
 import com.database.table.Students
 import com.database.table.Supervisors
 import com.database.table.Users
-import com.utils.UserRequest
 import com.utils.requireAdmin
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class UserRequest(
+    val id: Int,
+    val email: String,
+    val name: String,
+    val surname: String,
+    val expertiseField: String? = null
+)
 
 fun Routing.adminRoutes() {
     get("/admin/panel") {
