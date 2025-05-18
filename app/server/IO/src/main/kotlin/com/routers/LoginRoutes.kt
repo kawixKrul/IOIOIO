@@ -5,6 +5,7 @@ package com.routers
 import com.database.table.Sessions
 import com.database.table.Users
 import com.hashPassword
+import com.verifyPassword
 import io.ktor.http.*
 import io.ktor.server.plugins.*
 import io.ktor.server.request.*
@@ -46,7 +47,7 @@ fun Route.loginRoutes() {
 
         // Verify password
         val storedHash = user[Users.passwordHash]
-        if (storedHash != hashPassword(password)) {
+        if (!verifyPassword(password, storedHash)) {
             call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
             return@post
         }
