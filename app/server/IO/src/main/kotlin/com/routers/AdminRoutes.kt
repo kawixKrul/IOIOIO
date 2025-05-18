@@ -13,7 +13,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Routing.adminRoutes() {
-    get("/admin/panel") {http://localhost:8080/login
+    get("/admin/panel") {
         val userId = call.requireAdmin() ?: return@get
         call.respondText("Welcome to admin panel.")
     }
