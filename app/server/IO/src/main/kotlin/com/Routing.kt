@@ -1,5 +1,6 @@
 package com
 
+import com.routers.adminRoutes
 import com.routers.loginRoutes
 import com.routers.protectedRoutes
 import io.ktor.server.application.*
@@ -25,6 +26,8 @@ fun Application.configureRouting(
         loginRoutes()
 
         protectedRoutes()
+
+        adminRoutes()
     }
 
 }
