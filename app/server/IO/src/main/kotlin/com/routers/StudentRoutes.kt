@@ -7,6 +7,7 @@ import com.utils.requireSupervisor
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
 import io.ktor.http.*
+import io.ktor.server.application.log
 import io.ktor.server.request.*
 import kotlinx.coroutines.launch
 import org.jetbrains.exposed.sql.*
@@ -92,7 +93,18 @@ fun Route.studentRoutes(appBaseUrl: String, mailApiKey: String, mailDomain: Stri
             return@post
         }
 
-        val (promoterId, topicTitle, promoterEmail) = transaction {
+        // Check if student already has a confirmed application**
+        val alreadyConfirmed = transaction {
+            Applications.select {
+                (Applications.studentId eq studentId) and (Applications.status eq 1)
+            }.count() > 0
+        }
+        if (alreadyConfirmed) {
+            call.respond(HttpStatusCode.Conflict, "You already have a confirmed application and cannot apply for another topic.")
+            return@post
+        }
+
+        val topicData = transaction {
             (ThesesTopics innerJoin Supervisors innerJoin Users)
                 .select { ThesesTopics.id eq req.topicId }
                 .singleOrNull()
@@ -101,12 +113,21 @@ fun Route.studentRoutes(appBaseUrl: String, mailApiKey: String, mailDomain: Stri
                         it[Supervisors.id].value,
                         it[ThesesTopics.title],
                         it[Users.email]
-                    )
+                    ) to it[ThesesTopics.availableSlots]
                 }
         } ?: run {
             call.respond(HttpStatusCode.NotFound, "Topic not found.")
             return@post
         }
+
+        val (promoterInfo, availableSlots) = topicData
+
+        if (availableSlots <= 0) {
+            call.respond(HttpStatusCode.BadRequest, "No available slots.")
+            return@post
+        }
+
+        val (promoterId, topicTitle, promoterEmail) = promoterInfo
 
         // Zapobiegaj podwójnej aplikacji
         val alreadyApplied = transaction {
