@@ -94,7 +94,7 @@ fun Route.supervisorRoutes(appBaseUrl: String, mailApiKey: String, mailDomain: S
     get("/promoter/confirm-application") {
         val token = call.request.queryParameters["token"]
         if (token.isNullOrBlank()) {
-            call.respond(HttpStatusCode.BadRequest, "No actiivation token.")
+            call.respond(HttpStatusCode.BadRequest, "No activation token.")
             return@get
         }
 
