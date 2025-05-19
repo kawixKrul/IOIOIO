@@ -1,4 +1,4 @@
-package com.database.service
+package com.service
 
 import com.database.table.Students
 import org.jetbrains.exposed.sql.*
@@ -7,17 +7,17 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 
 class StudentService {
-    fun addStudent(mail: String, password: String, name: String, surname: String, topicId: Int? = null): Int {
-        return transaction {
-            Students.insertAndGetId {
-                it[Students.mail] = mail
-                it[Students.password] = password
-                it[Students.name] = name
-                it[Students.surname] = surname
-                it[Students.idChosenTopic] = topicId
-            }.value
-        }
-    }
+//    fun addStudent(mail: String, password: String, name: String, surname: String, topicId: Int? = null): Int {
+//        return transaction {
+//            Students.insertAndGetId {
+//                it[Students.mail] = mail
+//                it[Students.password] = password
+//                it[Students.name] = name
+//                it[Students.surname] = surname
+//                it[Students.idChosenTopic] = topicId
+//            }.value
+//        }
+//    }
 
     fun deleteStudent(id: Int) {
         transaction {
