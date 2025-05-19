@@ -46,4 +46,46 @@ suspend fun sendActivationEmail(
         client.close()
         println("Email client closed.")
     }
+
+}
+
+suspend fun sendNotificationEmail(
+    apiKey: String,
+    domain: String,
+    email: String,
+    subject: String,
+    text: String
+) {
+    val client = HttpClient(CIO) {
+        install(Logging) {
+            level = LogLevel.ALL
+            logger = Logger.DEFAULT
+        }
+    }
+
+    try {
+        println("Sending notification email to $email...")
+
+        val response: HttpResponse = client.submitForm(
+            url = "https://api.mailgun.net/v3/$domain/messages",
+            formParameters = Parameters.build {
+                append("from", "no-reply@$domain")
+                append("to", email)
+                append("subject", subject)
+                append("text", text)
+            }
+        ) {
+            basicAuth("api", apiKey)
+        }
+
+        println("Notification email sent to $email with status: ${response.status}")
+        println("Response body: ${response.bodyAsText()}")
+
+    } catch (e: Exception) {
+        println("Failed to send notification email to $email: ${e.message}")
+        e.printStackTrace()
+    } finally {
+        client.close()
+        println("Email client closed.")
+    }
 }
