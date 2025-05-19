@@ -133,19 +133,23 @@ fun Route.studentRoutes(appBaseUrl: String, mailApiKey: String, mailDomain: Stri
 
         val activationLink = "$appBaseUrl/promoter/confirm-application?token=$confirmationToken"
         call.application.launch {
-            sendNotificationEmail(
-                mailApiKey,
-                mailDomain,
-                promoterEmail,
-                "Nowa aplikacja studenta na temat: $topicTitle",
-                """
-            Student złożył aplikację na Twój temat (ID: ${req.topicId}, tytuł: $topicTitle).
-            Aby potwierdzić aplikację, kliknij poniższy link:
-            $activationLink
+            try {
+                sendNotificationEmail(
+                    mailApiKey,
+                    mailDomain,
+                    promoterEmail,
+                    "Nowa aplikacja studenta na temat: $topicTitle",
+                    """
+                Student złożył aplikację na Twój temat (ID: ${req.topicId}, tytuł: $topicTitle).
+                Aby potwierdzić aplikację, kliknij poniższy link:
+                $activationLink
 
-            Jeśli to nie Ty, zignoruj tę wiadomość.
-        """.trimIndent()
-            )
+                Jeśli to nie Ty, zignoruj tę wiadomość.
+            """.trimIndent()
+                )
+            } catch (e: Exception) {
+                call.application.log.error("Failed to send notification email to $promoterEmail for topic $topicTitle", e)
+            }
         }
         call.respond(HttpStatusCode.OK, "Application has been sent. Supervisor is notified.")
     }
