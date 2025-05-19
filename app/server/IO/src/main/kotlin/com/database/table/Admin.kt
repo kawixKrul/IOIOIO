@@ -1,8 +1,12 @@
 package com.database.table
 
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.ReferenceOption
 
-object Admins : IntIdTable("Admin") {
-    val mail = varchar("Mail", 30).uniqueIndex()
-    val password = varchar("Password", 30)
+object Admins : IntIdTable("admins") {
+    val userId = reference(
+        name = "user_id",
+        foreign = Users,
+        onDelete = ReferenceOption.CASCADE
+    ).uniqueIndex()
 }
