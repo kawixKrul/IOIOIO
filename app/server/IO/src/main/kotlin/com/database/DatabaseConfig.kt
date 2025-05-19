@@ -7,6 +7,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.SchemaUtils
 import io.github.cdimascio.dotenv.dotenv
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
 import java.time.LocalDateTime
 
@@ -49,7 +50,7 @@ fun createInitialAdmin() {
     transaction {
         val hasAdmin = Users.select { Users.role eq "admin" }.count() > 0
         if (!hasAdmin) {
-            Users.insert {
+            val adminUserId = Users.insertAndGetId {
                 it[email] = "admin@agh.edu.pl"
                 it[passwordHash] = hashPassword("admin123")
                 it[role] = "admin"
@@ -57,7 +58,12 @@ fun createInitialAdmin() {
                 it[surname] = "Admin"
                 it[createdAt] = LocalDateTime.now()
                 it[isActive] = true
+            }.value
+
+            Admins.insert {
+                it[userId] = adminUserId
             }
+
             println("Initial admin created.")
         }
     }
