@@ -32,6 +32,9 @@ dependencies {
     // SLF4J Simple (Basic Logging)
     implementation("org.slf4j:slf4j-simple:2.0.9")
 
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+
+
     implementation("at.favre.lib:bcrypt:0.10.2")
     implementation("io.ktor:ktor-server-core:$ktor_version")
     implementation("io.ktor:ktor-server-auth:$ktor_version")

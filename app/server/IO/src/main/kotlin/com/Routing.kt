@@ -28,9 +28,9 @@ fun Application.configureRouting(
 
         adminRoutes()
 
-        supervisorRoutes()
+        supervisorRoutes(appBaseUrl, mailgunApiKey, mailgunDomain)
 
-        studentRoutes()
+        studentRoutes(appBaseUrl, mailgunApiKey, mailgunDomain)
     }
 
 }
