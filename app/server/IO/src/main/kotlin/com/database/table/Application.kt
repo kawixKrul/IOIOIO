@@ -8,4 +8,5 @@ object Applications : IntIdTable("Applications") {
     val topicId = reference("Topic_ID", ThesesTopics)
     val description = text("Description")
     val status = integer("Status")
+    val confirmationToken = varchar("ConfirmationToken", 64).nullable()
 }

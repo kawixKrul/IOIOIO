@@ -1,16 +1,19 @@
 package com.routers
 
-import com.database.table.ThesesTopics
-import com.database.table.Supervisors
-import com.database.table.Users
+import com.database.table.*
+import com.service.sendNotificationEmail
 import com.utils.currentUserId
 import com.utils.requireSupervisor
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
 import io.ktor.http.*
+import io.ktor.server.request.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlinx.serialization.Serializable
+import java.util.*
+import io.ktor.server.application.*
+import kotlinx.coroutines.launch
 
 @Serializable
 data class ThesisTopicResponse(
@@ -31,7 +34,13 @@ data class PromoterInfo(
     val expertiseField: String
 )
 
-fun Route.studentRoutes() {
+@Serializable
+data class ApplyTopicRequest(
+    val topicId: Int,
+    val description: String
+)
+
+fun Route.studentRoutes(appBaseUrl: String, mailApiKey: String, mailDomain: String) {
     get("/profile") {
         val userId = call.currentUserId() ?: return@get
         // Now you can use userId to fetch user info from the DB
@@ -61,5 +70,84 @@ fun Route.studentRoutes() {
                 }
         }
         call.respond(HttpStatusCode.OK, topics)
+    }
+
+    post("/student/apply") {
+        val userId = call.currentUserId()
+        if (userId == null) {
+            call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
+            return@post
+        }
+
+        val req = call.receive<ApplyTopicRequest>()
+
+        val (studentId, studentEmail) = transaction {
+            Students.innerJoin(Users)
+                .select { Students.userId eq userId }
+                .singleOrNull()
+                ?.let { it[Students.id].value to it[Users.email] }
+        } ?: run {
+            call.respond(HttpStatusCode.BadRequest, "Student profile not found.")
+            return@post
+        }
+
+        val (promoterId, topicTitle, promoterEmail) = transaction {
+            (ThesesTopics innerJoin Supervisors innerJoin Users)
+                .select { ThesesTopics.id eq req.topicId }
+                .singleOrNull()
+                ?.let {
+                    Triple(
+                        it[Supervisors.id].value,
+                        it[ThesesTopics.title],
+                        it[Users.email]
+                    )
+                }
+        } ?: run {
+            call.respond(HttpStatusCode.NotFound, "Topic not found.")
+            return@post
+        }
+
+        // Zapobiegaj podwójnej aplikacji
+        val alreadyApplied = transaction {
+            Applications.select {
+                (Applications.studentId eq studentId) and (Applications.topicId eq req.topicId)
+            }.count() > 0
+        }
+        if (alreadyApplied) {
+            call.respond(HttpStatusCode.Conflict, "Already applied for this topic.")
+            return@post
+        }
+
+        val confirmationToken = UUID.randomUUID().toString()
+        val applicationId = transaction {
+            Applications.insertAndGetId {
+                it[Applications.studentId] = studentId
+                it[Applications.promoterId] = promoterId
+                it[Applications.topicId] = req.topicId
+                it[Applications.description] = req.description
+                it[Applications.status] = 0 // pending
+                it[Applications.confirmationToken] = confirmationToken
+            }
+        }
+
+        val activationLink = "$appBaseUrl/promoter/confirm-application?token=$confirmationToken"
+        call.application.launch {
+            sendNotificationEmail(
+                mailApiKey,
+                mailDomain,
+                promoterEmail,
+                "Nowa aplikacja studenta na temat: $topicTitle",
+                """
+            Student złożył aplikację na Twój temat (ID: ${req.topicId}, tytuł: $topicTitle).
+            Aby potwierdzić aplikację, kliknij poniższy link:
+            $activationLink
+
+            Jeśli to nie Ty, zignoruj tę wiadomość.
+        """.trimIndent()
+            )
+        }
+
+
+        call.respond(HttpStatusCode.OK, "Application has been sent. Supervisor is notified.")
     }
 }
