@@ -14,6 +14,8 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.http.*
 
 fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
@@ -23,6 +25,21 @@ fun Application.module() {
 
     install(ContentNegotiation) {
         json()
+    }
+    
+    // Configure CORS
+    install(CORS) {
+        allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Delete)
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.Authorization)
+        allowCredentials = true
+        anyHost() // For development only - in production, specify hosts
+        // Alternative: Only allow specific origins
+        // allowHost("localhost:3000", schemes = listOf("http", "https"))
     }
 
     // Read configuration from .env using dotenv
