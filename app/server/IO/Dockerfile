@@ -1,15 +1,24 @@
 # syntax=docker/dockerfile:1.4
 ####### build stage #######
-FROM gradle:8.5-jdk17 AS build
+FROM gradle:8.14-jdk17-alpine AS build
 WORKDIR /app
+
+# Install dos2unix for robust line ending conversion
+RUN apk add --no-cache dos2unix
 
 # 1) copy wrapper + build scripts + properties
 COPY gradlew .
 COPY gradle gradle
 COPY build.gradle.kts settings.gradle.kts gradle.properties ./
 
+# Convert line endings for gradlew using dos2unix
+RUN dos2unix gradlew
+
 # make the wrapper executable
 RUN chmod +x gradlew
+
+# Optional: Debug step to check the first line of gradlew (shows non-printable chars)
+RUN echo "First line of gradlew after dos2unix and chmod:" && head -n 1 /app/gradlew | cat -A && echo "\\n"
 
 # 2) warm up Gradle (download wrapper, plugins, deps) into BuildKit cache
 RUN --mount=type=cache,id=gradle-cache,target=/home/gradle/.gradle \

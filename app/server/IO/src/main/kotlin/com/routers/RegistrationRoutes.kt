@@ -129,4 +129,24 @@ fun Route.registrationRoutes(appBaseUrl: String, mailgunApiKey: String, mailgunD
         call.respondText("Account activated successfully. You can now log in.")
     }
 
+    get("/activation-status") {
+        val email = call.request.queryParameters["email"]
+        if (email.isNullOrBlank()) {
+            call.respond(HttpStatusCode.BadRequest, "Email parameter is missing")
+            return@get
+        }
+
+        val userIsActive = transaction {
+            Users
+                .select { Users.email eq email.trim().lowercase() }
+                .singleOrNull()
+                ?.get(Users.isActive) ?: false
+        }
+
+        if (userIsActive) {
+            call.respond(HttpStatusCode.OK, mapOf("isActive" to true))
+        } else {
+            call.respond(HttpStatusCode.OK, mapOf("isActive" to false))
+        }
+    }
 }

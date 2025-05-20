@@ -50,15 +50,13 @@ dependencies {
     implementation("io.ktor:ktor-server-auth-jwt:2.4.1")
     implementation("io.ktor:ktor-server-sessions:2.4.1")
     implementation("io.ktor:ktor-server-content-negotiation:2.4.1")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.4.1")
-
-    // Add these for Mailgun/email HTTP requests:
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.4.1")    // Add these for Mailgun/email HTTP requests:
     implementation("io.ktor:ktor-client-core:$ktor_version")
     implementation("io.ktor:ktor-client-cio:$ktor_version")
-
     implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
     implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
+    implementation("io.ktor:ktor-server-cors:$ktor_version")
 
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")

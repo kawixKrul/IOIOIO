@@ -169,7 +169,7 @@ fun Route.studentRoutes(appBaseUrl: String, mailApiKey: String, mailDomain: Stri
             """.trimIndent()
                 )
             } catch (e: Exception) {
-                call.application.log.error("Failed to send notification email to $promoterEmail for topic $topicTitle", e)
+                call.application.environment.log.error("Failed to send notification email to $promoterEmail for topic $topicTitle", e)
             }
         }
         call.respond(HttpStatusCode.OK, "Application has been sent. Supervisor is notified.")
