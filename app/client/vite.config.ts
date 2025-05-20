@@ -17,5 +17,15 @@ export default defineConfig({
         main: path.resolve(__dirname, 'index.html'),
       },
     },
+  },  server: {
+    proxy: {
+      // Proxy /api requests to backend service during development
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
   },
 })
