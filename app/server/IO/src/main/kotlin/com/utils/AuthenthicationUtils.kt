@@ -49,3 +49,23 @@ suspend fun ApplicationCall.requireSupervisor(): Int? {
     return userId
 }
 
+suspend fun ApplicationCall.requireStudent(): Int? {
+    val userId = currentUserId()
+    if (userId == null) {
+        respond(HttpStatusCode.Unauthorized, "You are not logged in.")
+        return null
+    }
+
+    val isSupervisor = transaction {
+        Users.select { Users.id eq userId }
+            .map { it[Users.role] }
+            .singleOrNull() == "student"
+    }
+
+    if (!isSupervisor) {
+        respond(HttpStatusCode.Forbidden, "Access denied. Students only.")
+        return null
+    }
+
+    return userId
+}
