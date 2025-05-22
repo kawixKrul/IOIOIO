@@ -3,6 +3,7 @@ package com.routers
 import com.database.table.*
 import com.service.sendNotificationEmail
 import com.utils.currentUserId
+import com.utils.requireStudent
 import com.utils.requireSupervisor
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
@@ -44,13 +45,13 @@ data class ApplyTopicRequest(
 
 fun Route.studentRoutes(appBaseUrl: String, mailApiKey: String, mailDomain: String) {
     get("/profile") {
-        val userId = call.currentUserId() ?: return@get
+        val userId = call.requireStudent() ?: return@get
         // Now you can use userId to fetch user info from the DB
         call.respond(HttpStatusCode.OK, "You are logged in as user ID: $userId")
     }
 
     get("/student/topics") {
-        val userId = call.currentUserId() ?: return@get
+        val userId = call.requireStudent() ?: return@get
         val topics = transaction {
             (ThesesTopics innerJoin Supervisors innerJoin Users)
                 .selectAll()
@@ -74,12 +75,77 @@ fun Route.studentRoutes(appBaseUrl: String, mailApiKey: String, mailDomain: Stri
         call.respond(HttpStatusCode.OK, topics)
     }
 
-    post("/student/apply") {
-        val userId = call.currentUserId()
-        if (userId == null) {
-            call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
-            return@post
+    get("/student/topics/search") {
+        val userId = call.requireStudent() ?: return@get
+        val query = call.request.queryParameters["q"]?.trim()?.lowercase()
+        val rawDegreeFilter = call.request.queryParameters["degree"]?.trim()?.lowercase()
+        val degreeFilter = when(rawDegreeFilter) {
+            "bsc" -> "bsc"
+            "msc" -> "msc"
+            else -> null
         }
+
+        if (query.isNullOrBlank()) {
+            call.respond(HttpStatusCode.BadRequest, "Query parameter 'q' is required.")
+            return@get
+        }
+
+        val topics = transaction {
+            val baseQuery = ThesesTopics innerJoin Supervisors innerJoin Users
+
+            val matched = baseQuery.select {
+                (
+                        LowerCase(ThesesTopics.title).like("%$query%") or
+                                LowerCase(ThesesTopics.tagsList).like("%$query%")
+                        ) and
+                        (degreeFilter?.let { ThesesTopics.degreeLevel.lowerCase() eq it } ?: Op.TRUE)
+            }
+                .map {
+                    ThesisTopicResponse(
+                        id = it[ThesesTopics.id].value,
+                        title = it[ThesesTopics.title],
+                        description = it[ThesesTopics.description],
+                        degreeLevel = it[ThesesTopics.degreeLevel],
+                        availableSlots = it[ThesesTopics.availableSlots],
+                        tags = it[ThesesTopics.tagsList].split(",").map(String::trim),
+                        promoter = PromoterInfo(
+                            id = it[Supervisors.id].value,
+                            name = it[Users.name],
+                            surname = it[Users.surname],
+                            expertiseField = it[Supervisors.expertiseField]
+                        )
+                    )
+                }
+
+            matched.ifEmpty {
+                baseQuery
+                    .selectAll()
+                    .map {
+                        ThesisTopicResponse(
+                            id = it[ThesesTopics.id].value,
+                            title = it[ThesesTopics.title],
+                            description = it[ThesesTopics.description],
+                            degreeLevel = it[ThesesTopics.degreeLevel],
+                            availableSlots = it[ThesesTopics.availableSlots],
+                            tags = it[ThesesTopics.tagsList].split(",").map(String::trim),
+                            promoter = PromoterInfo(
+                                id = it[Supervisors.id].value,
+                                name = it[Users.name],
+                                surname = it[Users.surname],
+                                expertiseField = it[Supervisors.expertiseField]
+                            )
+                        )
+                    }
+            }
+        }
+
+        call.respond(HttpStatusCode.OK, topics)
+    }
+
+
+
+    post("/student/apply") {
+        val userId = call.requireStudent() ?: return@post
 
         val req = call.receive<ApplyTopicRequest>()
 
