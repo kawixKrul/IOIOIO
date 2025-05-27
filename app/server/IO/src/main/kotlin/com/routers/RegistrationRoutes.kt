@@ -1,104 +1,53 @@
 package com.routers
 
 // RegistrationRoutes.kt
-import io.ktor.server.routing.*
+import com.repository.RegistrationRepository
+import com.service.RegistrationService
+import com.service.sendActivationEmail
+import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
-import io.ktor.http.*
+import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.transactions.transaction
-import java.util.UUID
 import java.time.LocalDateTime
-import com.database.table.Users
-import com.database.table.ActivationTokens
-import com.database.table.Students
-import com.database.table.Supervisors
-import com.hashPassword
-import com.service.sendActivationEmail
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.update
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-
 
 @Serializable
 data class RegistrationRequest(
+    val expertiseField: String? = null,
     val email: String,
     val password: String,
     val name: String,
     val surname: String,
-    val role: String,
-    val expertiseField: String? = null
+    val role: String
 )
 
-fun Route.registrationRoutes(appBaseUrl: String, mailgunApiKey: String, mailgunDomain: String) {
+
+fun Route.registrationRoutes(registrationService: RegistrationService, appBaseUrl: String, mailgunApiKey: String, mailgunDomain: String) {
     post("/register") {
         val req = call.receive<RegistrationRequest>()
         val email = req.email.trim().lowercase()
+        val now = LocalDateTime.now()
 
-        val isStudentEmail = email.contains("@student.agh.edu.pl")
-        // For testing purposes, no check here because we would need @agh.edu.pl mail
-        // val isSupervisorEmail = email.contains("@agh.edu.pl") && !isStudentEmail
-        val isSupervisorEmail = !isStudentEmail
+        val result = registrationService.registerUser(
+            email,
+            req.password,
+            req.name,
+            req.surname,
+            req.role,
+            req.expertiseField,
+            now
+        )
 
-        if (!isStudentEmail && !isSupervisorEmail) {
-            call.respond(HttpStatusCode.BadRequest, "Invalid email domain for registration")
-            return@post
-        }
-
-        if (isSupervisorEmail && req.expertiseField.isNullOrBlank()) {
-            call.respond(HttpStatusCode.BadRequest, "Expertise field is required for supervisors")
-            return@post
-        }
-
-        val userExists = transaction {
-            Users.select { Users.email eq email }.count() > 0
-        }
-
-        if (userExists) {
-            call.respond(HttpStatusCode.BadRequest, "User already exists")
-            return@post
-        }
-
-        val (userId, token) = transaction {
-            val now = LocalDateTime.now()
-            val userId = Users.insert {
-                it[this.email] = email
-                it[this.passwordHash] = hashPassword(req.password)
-                it[this.isActive] = false
-                it[this.createdAt] = now
-                it[this.role] = if (isStudentEmail) "student" else "supervisor"
-                it[this.name] = req.name
-                it[this.surname] = req.surname
-            } get Users.id
-
-            if (isStudentEmail) {
-                Students.insert {
-                    it[this.userId] = userId
-                }
-            } else if (isSupervisorEmail) {
-                Supervisors.insert {
-                    it[this.userId] = userId
-                    it[this.expertiseField] = req.expertiseField!!
-                }
+        result.fold(
+            onSuccess = {
+                val activationLink = "$appBaseUrl/activate?token=${it.token}"
+                sendActivationEmail(mailgunApiKey, mailgunDomain, email, activationLink)
+                call.respond(HttpStatusCode.OK, "Registration successful. Check your email to activate your account.")
+            },
+            onFailure = { e ->
+                call.respond(HttpStatusCode.BadRequest, e.message ?: "Registration error")
             }
-
-            val token = UUID.randomUUID().toString()
-            ActivationTokens.insert {
-                it[ActivationTokens.userId] = userId
-                it[ActivationTokens.token] = token
-                it[ActivationTokens.expiresAt] = now.plusDays(1)
-            }
-
-            userId.value to token
-        }
-
-        val activationLink = "$appBaseUrl/activate?token=$token"
-        sendActivationEmail(mailgunApiKey, mailgunDomain, email, activationLink)
-
-        call.respond(HttpStatusCode.OK, "Registration successful. Check your email to activate your account.")
+        )
     }
 
     get("/activate") {
@@ -109,24 +58,12 @@ fun Route.registrationRoutes(appBaseUrl: String, mailgunApiKey: String, mailgunD
         }
 
         val now = LocalDateTime.now()
-        val userId = transaction {
-            ActivationTokens
-                .select { (ActivationTokens.token eq token) and (ActivationTokens.expiresAt greater now) }
-                .singleOrNull()
-                ?.get(ActivationTokens.userId)
-        }
-
-        if (userId == null) {
+        val activated = registrationService.activateUser(token, now)
+        if (activated) {
+            call.respondText("Account activated successfully. You can now log in.")
+        } else {
             call.respond(HttpStatusCode.BadRequest, "Invalid or expired token")
-            return@get
         }
-
-        transaction {
-            Users.update({ Users.id eq userId }) { it[isActive] = true }
-            ActivationTokens.deleteWhere { ActivationTokens.userId eq userId }
-        }
-
-        call.respondText("Account activated successfully. You can now log in.")
     }
 
     get("/activation-status") {
@@ -135,18 +72,7 @@ fun Route.registrationRoutes(appBaseUrl: String, mailgunApiKey: String, mailgunD
             call.respond(HttpStatusCode.BadRequest, "Email parameter is missing")
             return@get
         }
-
-        val userIsActive = transaction {
-            Users
-                .select { Users.email eq email.trim().lowercase() }
-                .singleOrNull()
-                ?.get(Users.isActive) ?: false
-        }
-
-        if (userIsActive) {
-            call.respond(HttpStatusCode.OK, mapOf("isActive" to true))
-        } else {
-            call.respond(HttpStatusCode.OK, mapOf("isActive" to false))
-        }
+        val userIsActive = registrationService.isUserActive(email.trim().lowercase())
+        call.respond(HttpStatusCode.OK, mapOf("isActive" to userIsActive))
     }
 }
