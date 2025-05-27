@@ -1,0 +1,27 @@
+<!-- resources/email_template.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{subject}}</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f6f6f6; padding: 30px; }
+        .container { background: #fff; border-radius: 8px; padding: 24px; max-width: 500px; margin: auto; box-shadow: 0 2px 8px #0001;}
+        .btn { display: inline-block; margin: 16px 0; background: #007bff; color: #fff; padding: 12px 24px; border-radius: 4px; text-decoration: none;}
+        .footer { font-size: 12px; color: #aaa; margin-top: 24px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>{{subject}}</h2>
+    <p>{{message}}</p>
+    {{#if buttonLink}}
+    <a href="{{buttonLink}}" class="btn">{{buttonText}}</a>
+    {{/if}}
+    <div class="footer">
+        If you didn't request this, please ignore this email.<br>
+        &copy; 2025 Your Company
+    </div>
+</div>
+</body>
+</html>
