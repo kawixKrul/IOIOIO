@@ -8,6 +8,31 @@ import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 
+
+import java.nio.file.Files
+import java.nio.file.Paths
+
+fun loadEmailTemplate(
+    resourcePath: String,
+    replacements: Map<String, String?>
+): String {
+    val stream = object {}.javaClass.getResourceAsStream(resourcePath)
+        ?: throw IllegalArgumentException("Nie znaleziono pliku zasobu: $resourcePath")
+    var content = stream.bufferedReader(Charsets.UTF_8).readText()
+
+    for ((key, value) in replacements) {
+        content = content.replace("{{${key}}}", value ?: "")
+    }
+    // Remove optional blocks if not used (rudimentary for this example)
+    if (replacements["buttonLink"].isNullOrEmpty()) {
+        content = content.replace(Regex("""\{\{#if buttonLink}}.*\{\{/if}}""", RegexOption.DOT_MATCHES_ALL), "")
+    } else {
+        content = content.replace("{{#if buttonLink}}", "").replace("{{/if}}", "")
+    }
+    return content
+}
+
+
 suspend fun sendActivationEmail(
     apiKey: String,
     domain: String,
@@ -24,13 +49,27 @@ suspend fun sendActivationEmail(
     try {
         println("Sending activation email to $email...")
 
+        val subject = "Activate your account"
+        val message = "Click the button below to activate your account."
+        val htmlBody = loadEmailTemplate(
+            "/email_template.html",   // Zwróć uwagę na "/" na początku!
+            mapOf(
+                "subject" to subject,
+                "message" to message,
+                "buttonLink" to activationLink,
+                "buttonText" to "Activate Account"
+            )
+        )
+
+
         val response: HttpResponse = client.submitForm(
             url = "https://api.mailgun.net/v3/$domain/messages",
             formParameters = Parameters.build {
                 append("from", "no-reply@$domain")
                 append("to", email)
-                append("subject", "Activate your account")
-                append("text", "Click this link to activate your account: $activationLink")
+                append("subject", subject)
+                append("text", "$message $activationLink")
+                append("html", htmlBody)
             }
         ) {
             basicAuth("api", apiKey)
@@ -46,15 +85,17 @@ suspend fun sendActivationEmail(
         client.close()
         println("Email client closed.")
     }
-
 }
+
 
 suspend fun sendNotificationEmail(
     apiKey: String,
     domain: String,
     email: String,
     subject: String,
-    text: String
+    text: String,
+    buttonLink: String? = null,
+    buttonText: String? = null
 ) {
     val client = HttpClient(CIO) {
         install(Logging) {
@@ -66,6 +107,16 @@ suspend fun sendNotificationEmail(
     try {
         println("Sending notification email to $email...")
 
+        val htmlBody = loadEmailTemplate(
+            "/email_template.html",   // Zwróć uwagę na "/" na początku!
+            mapOf(
+                "subject" to subject,
+                "message" to text,
+                "buttonLink" to buttonLink,
+                "buttonText" to buttonText
+            )
+        )
+        
         val response: HttpResponse = client.submitForm(
             url = "https://api.mailgun.net/v3/$domain/messages",
             formParameters = Parameters.build {
@@ -73,6 +124,7 @@ suspend fun sendNotificationEmail(
                 append("to", email)
                 append("subject", subject)
                 append("text", text)
+                append("html", htmlBody)
             }
         ) {
             basicAuth("api", apiKey)
