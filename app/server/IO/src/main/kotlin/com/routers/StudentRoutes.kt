@@ -1,21 +1,17 @@
 package com.routers
 
-import com.database.table.*
+import com.repository.StudentRepository
+import com.service.StudentService
 import com.service.sendNotificationEmail
 import com.utils.currentUserId
-import com.utils.requireStudent
-import com.utils.requireSupervisor
-import io.ktor.server.routing.*
-import io.ktor.server.response.*
 import io.ktor.http.*
-import io.ktor.server.application.log
 import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.coroutines.launch
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.transactions.transaction
 import kotlinx.serialization.Serializable
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import java.util.*
+
 
 @Serializable
 data class ThesisTopicResponse(
@@ -42,44 +38,22 @@ data class ApplyTopicRequest(
     val description: String
 )
 
-
-fun Route.studentRoutes(appBaseUrl: String, mailApiKey: String, mailDomain: String) {
+fun Route.studentRoutes(studentService: StudentService, appBaseUrl: String, mailApiKey: String, mailDomain: String) {
     get("/profile") {
-        val userId = call.requireStudent() ?: return@get
-        // Now you can use userId to fetch user info from the DB
+        val userId = call.currentUserId() ?: return@get
         call.respond(HttpStatusCode.OK, "You are logged in as user ID: $userId")
     }
 
     get("/student/topics") {
-        val userId = call.requireStudent() ?: return@get
-        val topics = transaction {
-            (ThesesTopics innerJoin Supervisors innerJoin Users)
-                .selectAll()
-                .map {
-                    ThesisTopicResponse(
-                        id = it[ThesesTopics.id].value,
-                        title = it[ThesesTopics.title],
-                        description = it[ThesesTopics.description],
-                        degreeLevel = it[ThesesTopics.degreeLevel],
-                        availableSlots = it[ThesesTopics.availableSlots],
-                        tags = it[ThesesTopics.tagsList].split(",").map { tag -> tag.trim() },
-                        promoter = PromoterInfo(
-                            id = it[Supervisors.id].value,
-                            name = it[Users.name],
-                            surname = it[Users.surname],
-                            expertiseField = it[Supervisors.expertiseField]
-                        )
-                    )
-                }
-        }
-        call.respond(HttpStatusCode.OK, topics)
+        val userId = call.currentUserId() ?: return@get
+        call.respond(HttpStatusCode.OK, studentService.getTopics())
     }
 
     get("/student/topics/search") {
-        val userId = call.requireStudent() ?: return@get
+        val userId = call.currentUserId() ?: return@get
         val query = call.request.queryParameters["q"]?.trim()?.lowercase()
         val rawDegreeFilter = call.request.queryParameters["degree"]?.trim()?.lowercase()
-        val degreeFilter = when(rawDegreeFilter) {
+        val degreeFilter = when (rawDegreeFilter) {
             "bsc" -> "bsc"
             "msc" -> "msc"
             else -> null
@@ -90,155 +64,44 @@ fun Route.studentRoutes(appBaseUrl: String, mailApiKey: String, mailDomain: Stri
             return@get
         }
 
-        val topics = transaction {
-            val baseQuery = ThesesTopics innerJoin Supervisors innerJoin Users
-
-            val matched = baseQuery.select {
-                (
-                        LowerCase(ThesesTopics.title).like("%$query%") or
-                                LowerCase(ThesesTopics.tagsList).like("%$query%")
-                        ) and
-                        (degreeFilter?.let { ThesesTopics.degreeLevel.lowerCase() eq it } ?: Op.TRUE)
-            }
-                .map {
-                    ThesisTopicResponse(
-                        id = it[ThesesTopics.id].value,
-                        title = it[ThesesTopics.title],
-                        description = it[ThesesTopics.description],
-                        degreeLevel = it[ThesesTopics.degreeLevel],
-                        availableSlots = it[ThesesTopics.availableSlots],
-                        tags = it[ThesesTopics.tagsList].split(",").map(String::trim),
-                        promoter = PromoterInfo(
-                            id = it[Supervisors.id].value,
-                            name = it[Users.name],
-                            surname = it[Users.surname],
-                            expertiseField = it[Supervisors.expertiseField]
-                        )
-                    )
-                }
-
-            matched.ifEmpty {
-                baseQuery
-                    .selectAll()
-                    .map {
-                        ThesisTopicResponse(
-                            id = it[ThesesTopics.id].value,
-                            title = it[ThesesTopics.title],
-                            description = it[ThesesTopics.description],
-                            degreeLevel = it[ThesesTopics.degreeLevel],
-                            availableSlots = it[ThesesTopics.availableSlots],
-                            tags = it[ThesesTopics.tagsList].split(",").map(String::trim),
-                            promoter = PromoterInfo(
-                                id = it[Supervisors.id].value,
-                                name = it[Users.name],
-                                surname = it[Users.surname],
-                                expertiseField = it[Supervisors.expertiseField]
-                            )
-                        )
-                    }
-            }
-        }
-
-        call.respond(HttpStatusCode.OK, topics)
+        call.respond(HttpStatusCode.OK, studentService.searchTopics(query, degreeFilter))
     }
-
-
 
     post("/student/apply") {
-        val userId = call.requireStudent() ?: return@post
-
+        val userId = call.currentUserId() ?: return@post
         val req = call.receive<ApplyTopicRequest>()
-
-        val (studentId, studentEmail) = transaction {
-            Students.innerJoin(Users)
-                .select { Students.userId eq userId }
-                .singleOrNull()
-                ?.let { it[Students.id].value to it[Users.email] }
-        } ?: run {
-            call.respond(HttpStatusCode.BadRequest, "Student profile not found.")
-            return@post
-        }
-
-        // Check if student already has a confirmed application**
-        val alreadyConfirmed = transaction {
-            Applications.select {
-                (Applications.studentId eq studentId) and (Applications.status eq 1)
-            }.count() > 0
-        }
-        if (alreadyConfirmed) {
-            call.respond(HttpStatusCode.Conflict, "You already have a confirmed application and cannot apply for another topic.")
-            return@post
-        }
-
-        val topicData = transaction {
-            (ThesesTopics innerJoin Supervisors innerJoin Users)
-                .select { ThesesTopics.id eq req.topicId }
-                .singleOrNull()
-                ?.let {
-                    Triple(
-                        it[Supervisors.id].value,
-                        it[ThesesTopics.title],
-                        it[Users.email]
-                    ) to it[ThesesTopics.availableSlots]
-                }
-        } ?: run {
-            call.respond(HttpStatusCode.NotFound, "Topic not found.")
-            return@post
-        }
-
-        val (promoterInfo, availableSlots) = topicData
-
-        if (availableSlots <= 0) {
-            call.respond(HttpStatusCode.BadRequest, "No available slots.")
-            return@post
-        }
-
-        val (promoterId, topicTitle, promoterEmail) = promoterInfo
-
-        // Zapobiegaj podwójnej aplikacji
-        val alreadyApplied = transaction {
-            Applications.select {
-                (Applications.studentId eq studentId) and (Applications.topicId eq req.topicId)
-            }.count() > 0
-        }
-        if (alreadyApplied) {
-            call.respond(HttpStatusCode.Conflict, "Already applied for this topic.")
-            return@post
-        }
-
         val confirmationToken = UUID.randomUUID().toString()
-        val applicationId = transaction {
-            Applications.insertAndGetId {
-                it[Applications.studentId] = studentId
-                it[Applications.promoterId] = promoterId
-                it[Applications.topicId] = req.topicId
-                it[Applications.description] = req.description
-                it[Applications.status] = 0 // pending
-                it[Applications.confirmationToken] = confirmationToken
+
+        when (val result = studentService.applyForTopic(userId, req, confirmationToken)) {
+            StudentService.ApplyResult.StudentNotFound ->
+                call.respond(HttpStatusCode.BadRequest, "Student profile not found.")
+            StudentService.ApplyResult.AlreadyConfirmed ->
+                call.respond(HttpStatusCode.Conflict, "You already have a confirmed application and cannot apply for another topic.")
+            StudentService.ApplyResult.TopicNotFound ->
+                call.respond(HttpStatusCode.NotFound, "Topic not found.")
+            StudentService.ApplyResult.NoSlots ->
+                call.respond(HttpStatusCode.BadRequest, "No available slots.")
+            StudentService.ApplyResult.AlreadyApplied ->
+                call.respond(HttpStatusCode.Conflict, "Already applied for this topic.")
+            is StudentService.ApplyResult.Success -> {
+                val activationLink = "$appBaseUrl/supervisor/confirm-application?token=${result.confirmationToken}"
+                call.application.launch {
+                    sendNotificationEmail(
+                        mailApiKey,
+                        mailDomain,
+                        result.promoterEmail,
+                        "Nowa aplikacja studenta na temat: ${result.topicTitle}",
+                        """
+                            Student złożył aplikację na Twój temat (tytuł: ${result.topicTitle}).
+                            Aby potwierdzić aplikację, kliknij poniższy link:
+                            $activationLink
+                            
+                            Jeśli to nie Ty, zignoruj tę wiadomość.
+                        """.trimIndent()
+                    )
+                }
+                call.respond(HttpStatusCode.OK, "Application has been sent. Supervisor is notified.")
             }
         }
-
-        val activationLink = "$appBaseUrl/promoter/confirm-application?token=$confirmationToken"
-        call.application.launch {
-            try {
-                sendNotificationEmail(
-                    mailApiKey,
-                    mailDomain,
-                    promoterEmail,
-                    "Nowa aplikacja studenta na temat: $topicTitle",
-                    """
-                Student złożył aplikację na Twój temat (ID: ${req.topicId}, tytuł: $topicTitle).
-                Aby potwierdzić aplikację, kliknij poniższy link:
-                $activationLink
-
-                Jeśli to nie Ty, zignoruj tę wiadomość.
-            """.trimIndent()
-                )
-            } catch (e: Exception) {
-                call.application.environment.log.error("Failed to send notification email to $promoterEmail for topic $topicTitle", e)
-            }
-        }
-        call.respond(HttpStatusCode.OK, "Application has been sent. Supervisor is notified.")
     }
-
 }

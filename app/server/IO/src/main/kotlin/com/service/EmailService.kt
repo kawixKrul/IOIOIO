@@ -1,5 +1,6 @@
 package com.service
 
+
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.logging.*
@@ -7,10 +8,6 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-
-
-import java.nio.file.Files
-import java.nio.file.Paths
 
 fun loadEmailTemplate(
     resourcePath: String,
@@ -22,12 +19,6 @@ fun loadEmailTemplate(
 
     for ((key, value) in replacements) {
         content = content.replace("{{${key}}}", value ?: "")
-    }
-    // Remove optional blocks if not used (rudimentary for this example)
-    if (replacements["buttonLink"].isNullOrEmpty()) {
-        content = content.replace(Regex("""\{\{#if buttonLink}}.*\{\{/if}}""", RegexOption.DOT_MATCHES_ALL), "")
-    } else {
-        content = content.replace("{{#if buttonLink}}", "").replace("{{/if}}", "")
     }
     return content
 }
@@ -108,7 +99,7 @@ suspend fun sendNotificationEmail(
         println("Sending notification email to $email...")
 
         val htmlBody = loadEmailTemplate(
-            "/email_template.html",   // Zwróć uwagę na "/" na początku!
+            "/email_template.html",
             mapOf(
                 "subject" to subject,
                 "message" to text,
