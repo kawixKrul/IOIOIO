@@ -20,7 +20,7 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-
+    Thread.sleep(5000)
     install(ContentNegotiation) {
         json()
     }

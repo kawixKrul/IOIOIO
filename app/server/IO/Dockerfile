@@ -1,18 +1,14 @@
 # syntax=docker/dockerfile:1.4
 ####### build stage #######
-FROM gradle:8.14-jdk17-alpine AS build
+FROM gradle:8.14-jdk17 AS build
 WORKDIR /app
 
 # Install dos2unix for robust line ending conversion
-RUN apk add --no-cache dos2unix
 
 # 1) copy wrapper + build scripts + properties
 COPY gradlew .
 COPY gradle gradle
 COPY build.gradle.kts settings.gradle.kts gradle.properties ./
-
-# Convert line endings for gradlew using dos2unix
-RUN dos2unix gradlew
 
 # make the wrapper executable
 RUN chmod +x gradlew
