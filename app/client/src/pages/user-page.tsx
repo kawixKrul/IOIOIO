@@ -82,13 +82,13 @@ export default function UserPage() {
     // Fetch thesis topics
     const topicsQuery = useQuery({
         queryKey: ["thesisTopics"],
-        queryFn: () => studentApi.getTopics() as Promise<ThesisTopic[]>,
+        queryFn: () => studentApi.getTopics(),
     })
 
     // Fetch student applications
     const applicationsQuery = useQuery({
         queryKey: ["studentApplications"],
-        queryFn: () => studentApi.getApplications() as Promise<StudentApplication[]>,
+        queryFn: () => studentApi.getApplications(),
     })
 
     // Apply for a topic mutation
@@ -134,6 +134,8 @@ export default function UserPage() {
                 return <Badge variant="outline" className="bg-green-100">Accepted</Badge>
             case 2:
                 return <Badge variant="outline" className="bg-red-100">Rejected</Badge>
+            case 3:
+                return <Badge variant="outline" className="bg-grey-100">Withdrawn</Badge>
             default:
                 return <Badge variant="outline">Unknown</Badge>
         }
@@ -170,7 +172,7 @@ export default function UserPage() {
                             <TabsTrigger value="available-topics">Available Topics</TabsTrigger>
                             <TabsTrigger value="my-applications">My Applications</TabsTrigger>
                         </TabsList>
-                        
+
                         <TabsContent value="available-topics">
                             {topicsQuery.isPending && <p>Loading topics...</p>}
                             {topicsQuery.isError && (
@@ -243,7 +245,7 @@ export default function UserPage() {
                                 </div>
                             )}
                         </TabsContent>
-                        
+
                         <TabsContent value="my-applications">
                             {applicationsQuery.isPending && <p>Loading your applications...</p>}
                             {applicationsQuery.isError && (

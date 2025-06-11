@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:15
+    platform: linux/amd64
     container_name: postgres-db
     restart: always
     environment:
@@ -16,6 +17,7 @@ services:
     build:
       context: ./app/server/IO # Ścieżka do backendu
     container_name: kotlin-backend
+    platform: linux/amd64
     depends_on:
       - db
     environment:
@@ -29,6 +31,7 @@ services:
     build:
       context: ./app/client # Ścieżka do folderu frontendu
     container_name: vite-frontend
+    platform: linux/amd64
     ports:
       - "3000:80"
     develop:

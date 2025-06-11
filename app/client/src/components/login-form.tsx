@@ -25,9 +25,10 @@ export function LoginForm({
     const navigate = useNavigate();
 
     const loginMutation = useMutation({
-        mutationFn: (credentials: { email: string; password: string }) => 
+        mutationFn: (credentials: { email: string; password: string }) =>
             makeRequest("/login", "POST", credentials),
         onSuccess: () => {
+            // The cookie is now stored by the browser automatically
             navigate("/user");
         },
         onError: (error: Error) => {
