@@ -14,7 +14,7 @@ import {
     SidebarTrigger,
 } from "@/components/ui/sidebar"
 
-export default function OverseerPage() {
+export default function SupervisorPage() {
     return (
         <SidebarProvider>
             <AppSidebar />
