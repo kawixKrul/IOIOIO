@@ -12,6 +12,7 @@ COPY build.gradle.kts settings.gradle.kts gradle.properties ./
 
 # make the wrapper executable
 RUN chmod +x gradlew
+RUN apt-get update && apt-get install -y dos2unix && dos2unix gradlew
 
 # Optional: Debug step to check the first line of gradlew (shows non-printable chars)
 RUN echo "First line of gradlew after dos2unix and chmod:" && head -n 1 /app/gradlew | cat -A && echo "\\n"

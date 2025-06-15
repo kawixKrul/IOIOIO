@@ -29,7 +29,7 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from "@/components/ui/sidebar"
-import { useNavigate } from "react-router-dom"
+import { useAuth } from "@/hooks/useAuth"
 
 export function NavUser({
     user,
@@ -41,10 +41,15 @@ export function NavUser({
     }
 }) {
     const { isMobile } = useSidebar()
-    const navigate = useNavigate()
+    const { logout } = useAuth()
 
-    const onLogout = () => {
-        navigate("/")
+    const onLogout = async () => {
+        try {
+            await logout()
+        } catch (error) {
+            console.error('Logout failed:', error)
+            // Even if logout request fails, the auth context will clear the user state
+        }
     }
 
     return (

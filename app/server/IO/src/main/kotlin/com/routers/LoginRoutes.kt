@@ -3,6 +3,7 @@ package com.routers
 // RegistrationRoutes.kt
 import com.repository.AuthRepository
 import com.service.AuthService
+import com.utils.currentUserId
 import io.ktor.http.*
 import io.ktor.server.plugins.*
 import io.ktor.server.request.*
@@ -38,9 +39,9 @@ fun Route.loginRoutes(authService: AuthService) {
                         name = "session_token",
                         value = it.sessionToken,
                         httpOnly = true,
-                        secure = false, // true in production!
+                        secure = false,
                         path = "/",
-                        maxAge = 60 * 60 // 1 hour
+                        maxAge = 60 * 60
                     )
                 )
                 call.respond(HttpStatusCode.OK, "Login successful. Session cookie set.")
@@ -49,5 +50,19 @@ fun Route.loginRoutes(authService: AuthService) {
                 call.respond(HttpStatusCode.Unauthorized, e.message ?: "Login failed")
             }
         )
+    }
+
+    get("/auth/verify") {
+        val userId = call.currentUserId()
+        if (userId != null) {
+            call.respond(HttpStatusCode.OK, mapOf("authenticated" to true, "userId" to userId))
+        } else {
+            call.respond(HttpStatusCode.Unauthorized, mapOf("authenticated" to false))
+        }
+    }
+
+    post("/logout") {
+        call.response.cookies.appendExpired("session_token", path = "/")
+        call.respond(HttpStatusCode.OK, "Logged out successfully")
     }
 }

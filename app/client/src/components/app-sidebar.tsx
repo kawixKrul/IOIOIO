@@ -157,6 +157,12 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    // You can add the useAuth hook here later to get real user data
+    // const { user } = useAuth()
+    
+    // For now, use the mock data but this can be replaced with real user data
+    const userData = data.user; // Replace with: user ? { name: `${user.firstName} ${user.lastName}`, email: user.email, avatar: "/avatars/default.jpg" } : data.user
+
     return (
         <Sidebar collapsible="icon" {...props}>
             <SidebarHeader>
@@ -167,7 +173,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <NavProjects projects={data.projects} />
             </SidebarContent>
             <SidebarFooter>
-                <NavUser user={data.user} />
+                <NavUser user={userData} />
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>

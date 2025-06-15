@@ -12,8 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
-import { makeRequest } from "@/api/requests";
+import { useAuth } from "@/hooks/useAuth";
 
 export function LoginForm({
     className,
@@ -22,23 +21,25 @@ export function LoginForm({
 }: React.ComponentPropsWithoutRef<"div"> & { onToggleForm: () => void }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
-
-    const loginMutation = useMutation({
-        mutationFn: (credentials: { email: string; password: string }) =>
-            makeRequest("/login", "POST", credentials),
-        onSuccess: () => {
-            // The cookie is now stored by the browser automatically
-            navigate("/user");
-        },
-        onError: (error: Error) => {
-            alert(error.message || "Login failed");
-        }
-    });
+    const { login } = useAuth();
 
     const handleLogin = async (event: React.FormEvent) => {
         event.preventDefault();
-        loginMutation.mutate({ email, password });
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            await login(email, password);
+            // Navigation will be handled by the auth context after successful login
+            navigate("/user");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Login failed");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -51,8 +52,7 @@ export function LoginForm({
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleLogin}>
-                        <div className="flex flex-col gap-6">
+                    <form onSubmit={handleLogin}>                        <div className="flex flex-col gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email</Label>
                                 <Input
@@ -62,7 +62,7 @@ export function LoginForm({
                                     value={email}
                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                                     required
-                                    disabled={loginMutation.isPending}
+                                    disabled={isLoading}
                                 />
                             </div>
                             <div className="grid gap-2">
@@ -81,17 +81,17 @@ export function LoginForm({
                                     required
                                     value={password}
                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                                    disabled={loginMutation.isPending}
+                                    disabled={isLoading}
                                 />
                             </div>
-                            <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
-                                {loginMutation.isPending ? "Logging in..." : "Login"}
+                            <Button type="submit" className="w-full" disabled={isLoading}>
+                                {isLoading ? "Logging in..." : "Login"}
                             </Button>
-                            <Button type="button" onClick={onToggleForm} className="w-full" disabled={loginMutation.isPending}>
+                            <Button type="button" onClick={onToggleForm} className="w-full" disabled={isLoading}>
                                 Don&apos;t have an account?
                             </Button>
-                            {loginMutation.isError && (
-                                <p className="text-sm text-red-500 mt-2">{loginMutation.error.message}</p>
+                            {error && (
+                                <p className="text-sm text-red-500 mt-2">{error}</p>
                             )}
                         </div>
                     </form>

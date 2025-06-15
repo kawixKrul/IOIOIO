@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sidebar"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
     Card,
     CardContent,
@@ -78,17 +79,29 @@ export default function UserPage() {
     const [applicationMessage, setApplicationMessage] = useState("")
     const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false)
     const [activeTab, setActiveTab] = useState("available-topics")
+    
+    // Search state
+    const [searchQuery, setSearchQuery] = useState("")
+    const [selectedDegree, setSelectedDegree] = useState<'bsc' | 'msc' | ''>("")
+    const [isSearching, setIsSearching] = useState(false)
 
     // Fetch thesis topics
     const topicsQuery = useQuery({
         queryKey: ["thesisTopics"],
         queryFn: () => studentApi.getTopics(),
+        enabled: !isSearching, // Only fetch all topics when not searching
     })
 
-    // Fetch student applications
+    // Search query
+    const searchQuery_data = useQuery({
+        queryKey: ["searchTopics", searchQuery, selectedDegree],
+        queryFn: () => studentApi.searchTopics(searchQuery, selectedDegree || undefined),
+        enabled: isSearching && searchQuery.trim().length > 0,
+    })    // Fetch student applications - TODO: implement backend endpoint
     const applicationsQuery = useQuery({
         queryKey: ["studentApplications"],
-        queryFn: () => studentApi.getApplications(),
+        queryFn: (): Promise<StudentApplication[]> => Promise.resolve([]), // Mock empty array until backend is implemented
+        enabled: false, // Disable until backend endpoint exists
     })
 
     // Apply for a topic mutation
@@ -124,6 +137,24 @@ export default function UserPage() {
 
         applyMutation.mutate(payload)
     }
+
+    // Search handlers
+    const handleSearchSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (searchQuery.trim().length > 0) {
+            setIsSearching(true)
+        }
+    }
+
+    const handleClearSearch = () => {
+        setSearchQuery("")
+        setSelectedDegree("")
+        setIsSearching(false)
+    }
+
+    // Determine which data to display
+    const currentTopicsData = isSearching ? searchQuery_data : topicsQuery
+    const displayTopics = currentTopicsData.data || []
 
     // Helper function to render application status
     const renderApplicationStatus = (status: number) => {
@@ -171,19 +202,53 @@ export default function UserPage() {
                         <TabsList className="grid w-full grid-cols-2 mb-4">
                             <TabsTrigger value="available-topics">Available Topics</TabsTrigger>
                             <TabsTrigger value="my-applications">My Applications</TabsTrigger>
-                        </TabsList>
+                        </TabsList>                        <TabsContent value="available-topics">
+                            {/* Search Bar */}
+                            <div className="mb-6 space-y-4">
+                                <form onSubmit={handleSearchSubmit} className="flex gap-2">
+                                    <Input
+                                        type="text"
+                                        placeholder="Search topics (e.g., machine learning, AI, web development)"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="flex-1"
+                                    />
+                                    <select
+                                        value={selectedDegree}
+                                        onChange={(e) => setSelectedDegree(e.target.value as 'bsc' | 'msc' | '')}
+                                        className="px-3 py-2 border border-input bg-background rounded-md text-sm"
+                                    >
+                                        <option value="">All Degrees</option>
+                                        <option value="bsc">BSc</option>
+                                        <option value="msc">MSc</option>
+                                    </select>
+                                    <Button type="submit" disabled={!searchQuery.trim()}>
+                                        Search
+                                    </Button>
+                                    {isSearching && (
+                                        <Button type="button" variant="outline" onClick={handleClearSearch}>
+                                            Clear
+                                        </Button>
+                                    )}
+                                </form>
+                                {isSearching && (
+                                    <div className="text-sm text-muted-foreground">
+                                        Searching for: "{searchQuery}" {selectedDegree && `(${selectedDegree.toUpperCase()})`}
+                                    </div>
+                                )}
+                            </div>
 
-                        <TabsContent value="available-topics">
-                            {topicsQuery.isPending && <p>Loading topics...</p>}
-                            {topicsQuery.isError && (
-                                <p className="text-red-500">Error: {topicsQuery.error.message}</p>
+                            {/* Results */}
+                            {currentTopicsData.isPending && <p>Loading topics...</p>}
+                            {currentTopicsData.isError && (
+                                <p className="text-red-500">Error: {currentTopicsData.error.message}</p>
                             )}
-                            {topicsQuery.isSuccess && topicsQuery.data.length === 0 && (
-                                <p>No topics available at the moment.</p>
+                            {currentTopicsData.isSuccess && displayTopics.length === 0 && (
+                                <p>{isSearching ? "No topics found matching your search." : "No topics available at the moment."}</p>
                             )}
-                            {topicsQuery.isSuccess && topicsQuery.data.length > 0 && (
+                            {currentTopicsData.isSuccess && displayTopics.length > 0 && (
                                 <div className="grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                    {topicsQuery.data.map((topic) => (
+                                    {displayTopics.map((topic) => (
                                         <Card key={topic.id}>
                                             <CardHeader>
                                                 <CardTitle>{topic.title}</CardTitle>
