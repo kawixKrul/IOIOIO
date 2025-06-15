@@ -138,6 +138,30 @@ export interface ApplyTopicRequest {
   description: string;
 }
 
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+interface RegisterData {
+  email: string;
+  password: string;
+  name: string;
+  surname: string;
+  role: string;
+  expertiseField?: string;
+}
+
+interface UserProfile {
+  id: number;
+  email: string;
+  name: string;
+  surname: string;
+  role: 'admin' | 'supervisor' | 'student';
+  isActive: boolean;
+  createdAt?: string;
+}
+
 /**
  * Authentication API Client
  */
@@ -154,11 +178,17 @@ export const authApi = {
   logout: () =>
     makeRequest("/logout", "POST"),
 
-  // Check if user is authenticated and get user info - endpoint might not exist yet
-  getProfile: (): Promise<User> =>
-    makeRequest("/auth/profile", "GET").catch(() => {
-      throw new Error("Profile endpoint not implemented");
-    }),
+  // Get user profile
+  getProfile: async (): Promise<User> => {
+    const response = await makeRequest("/auth/profile", "GET");
+    return {
+      id: response.id,
+      email: response.email,
+      firstName: response.name,  // Maps 'name' to 'firstName'
+      lastName: response.surname, // Maps 'surname' to 'lastName'
+      role: response.role
+    };
+  },
 
   // Verify session is still valid
   verifySession: () =>
