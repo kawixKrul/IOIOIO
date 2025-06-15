@@ -1,7 +1,7 @@
 import { LandingPage } from './components/landing-page'
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import UserPage from './pages/user-page'
-import OverseerPage from './pages/supervisor-page'
+import Su from './pages/supervisor-page'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext.tsx'
 import { ProtectedRoute } from './components/ProtectedRoute'
