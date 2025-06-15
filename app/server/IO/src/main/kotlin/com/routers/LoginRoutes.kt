@@ -9,6 +9,7 @@ import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.util.date.GMTDate
 import kotlinx.serialization.Serializable
 
 
@@ -62,7 +63,15 @@ fun Route.loginRoutes(authService: AuthService) {
     }
 
     post("/logout") {
-        call.response.cookies.appendExpired("session_token", path = "/")
+        call.response.cookies.append(
+            name = "session_token",
+            value = "",
+            encoding = CookieEncoding.URI_ENCODING,
+            maxAge = 0,
+            expires = GMTDate.START, // or GMTDate(0) - sets to epoch (past time)
+            path = "/"
+        )
         call.respond(HttpStatusCode.OK, "Logged out successfully")
     }
+
 }
