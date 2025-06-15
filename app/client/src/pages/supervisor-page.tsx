@@ -22,12 +22,13 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import { useQuery} from "@tanstack/react-query"
-import { studentApi } from "@/api/requests"
+import { studentApi, supervisorApi } from "@/api/requests"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 
 export default function SupervisorPage() {
     const [activeTab, setActiveTab] = useState("other-topics")
+    const supervisorId : number = 101
 
     interface PromoterInfo {
         id: number
@@ -61,6 +62,86 @@ export default function SupervisorPage() {
         queryKey: ["thesisTopics"],
         queryFn: () => studentApi.getTopics(),
     })
+
+    const supervisorTopicsQuery = useQuery({
+        queryKey: ["supervisorTopics", supervisorId],
+        queryFn: () => supervisorApi.getTopicsBySupervisorId(supervisorId),
+    })
+
+    const supervisorApplicationsQuery = useQuery({
+        queryKey: ["supervisorApplications", supervisorId],
+        queryFn: () => supervisorApi.getApplicationsBySupervisorId(supervisorId),
+    })
+    const SupervisorMyTopicsTab = () => {
+        const { data: topics, isSuccess: topicsSuccess, isError: topicsError, error: topicsErrorInfo, isPending: topicsLoading } = supervisorTopicsQuery;
+        const { data: applications, isSuccess: applicationsSuccess } = supervisorApplicationsQuery;
+
+        return (
+            <TabsContent value={"my-topics"}>
+                {topicsLoading && <p>Loading topics...</p>}
+                {topicsError && <p className="text-red-500">Error: {topicsErrorInfo.message}</p>}
+                {topicsSuccess && topics.length === 0 && (
+                    <p>No topics available at the moment.</p>
+                )}
+                {topicsSuccess && topics.length > 0 && (
+                    <div className="grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {topics.map((topic) => {
+                            const waitingApplicationsCount = applicationsSuccess ?
+                                applications.filter(app => app.topicId === topic.id && app.status === 0).length : 0;
+                            return (
+                                <Card key={topic.id}>
+                                    <CardHeader>
+                                        <CardTitle>{topic.title}</CardTitle>
+                                        <CardDescription>
+                                            Degree: {topic.degreeLevel} - Slots: {topic.availableSlots}
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground">
+                                            {topic.description.substring(0, 150)}{topic.description.length > 150 ? "..." : ""}
+                                        </p>
+                                       {waitingApplicationsCount === 1 && (
+                                            <div className="mt-2">
+                                                <h4 className="text-xs font-semibold" style={{ color: "red" }}>
+                                                    There is 1 pending application, waiting for your review.
+                                                </h4>
+                                            </div>
+                                        )}
+                                        {waitingApplicationsCount > 1 && (
+                                            <div className="mt-2">
+                                                <h4 className="text-xs font-semibold" style={{ color: "red" }}>
+                                                    There are {waitingApplicationsCount} pending applications, waiting for your review.
+                                                </h4>
+                                            </div>
+                                        )}
+                                        {topic.availableSlots === 0 && (
+                                             <div className="mt-2">
+                                                <h4 className="text-xs font-semibold" style={{ color: "green" }}>
+                                                    There are no available left slots for this topic!
+                                                </h4>
+                                            </div>
+                                        )
+                                        }
+                                        <div className="mt-2">
+                                            <h4 className="text-xs font-semibold">Tags:</h4>
+                                            <div className="flex flex-wrap gap-1">
+                                                {topic.tags.map((tag, index) => (
+                                                    <span key={index} className="px-2 py-0.5 text-xs bg-secondary text-secondary-foreground rounded-full">
+                                                        {tag}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                )}
+            </TabsContent>
+        );
+    };
+
     return (
         <SidebarProvider>
             <AppSidebar />
@@ -91,12 +172,13 @@ export default function SupervisorPage() {
                     </div>
                 </header>
                 <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-                    <Tabs defaultValue="other-topics" onValueChange={setActiveTab}>
+                    <Tabs defaultValue="my-topics" onValueChange={setActiveTab}>
                         <TabsList className="flex w-full mb-4">
                             <TabsTrigger className="flex-1" value="my-topics">My Topics</TabsTrigger>
                             <TabsTrigger className="flex-1" value="applications">Applications</TabsTrigger>
                                 <TabsTrigger className="flex-1" value="other-topics">Other Topics</TabsTrigger>
                         </TabsList>
+                        <SupervisorMyTopicsTab></SupervisorMyTopicsTab>
                         <TabsContent value="other-topics">
                             {topicsQuery.isPending && <p>Loading topics...</p>}
                             {topicsQuery.isError && (

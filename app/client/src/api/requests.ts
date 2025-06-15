@@ -1,4 +1,4 @@
-import { mockApplications } from "./mock_data";
+import { ApplicationsResponse, mockApplications, mockTopics, ThesisTopicResponse } from "./mock_data";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
@@ -82,7 +82,15 @@ export const supervisorApi = {
     degreeLevel: string;
     availableSlots: number;
     tags: string[];
-  }) => makeRequest("/supervisor/topics", "POST", topicData)
+  }) => makeRequest("/supervisor/topics", "POST", topicData),
+
+  getTopicsBySupervisorId: (supervisorId: number): ThesisTopicResponse[] => {
+        return mockTopics.filter(topic => topic.promoter.id === supervisorId);
+  },
+
+  getApplicationsBySupervisorId: (supervisorId: number): ApplicationsResponse[] => {
+        return mockApplications.filter(application => application.promoter.id === supervisorId);
+  }
 }
 
 // Authentication types
