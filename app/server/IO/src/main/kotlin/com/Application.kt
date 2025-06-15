@@ -1,28 +1,26 @@
 package com
 
-import com.service.StudentService
 import com.database.connectToDatabase
 import com.database.createInitialAdmin
 import com.database.createTables
-import com.database.table.Students
-import com.database.table.Users
-import io.ktor.server.application.*
+import com.repository.*
+import com.routers.*
+import com.service.*
 import io.github.cdimascio.dotenv.dotenv
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.plugins.contentnegotiation.*
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.transactions.transaction
-import io.ktor.server.plugins.cors.routing.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.application.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 
 fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
 }
 
 fun Application.module() {
-
+    Thread.sleep(5000)
     install(ContentNegotiation) {
         json()
     }
@@ -48,12 +46,20 @@ fun Application.module() {
     val mailgunApiKey = dotenv["MAILGUN_API_KEY"] ?: error("Missing Mailgun API key")
     val mailgunDomain = dotenv["MAILGUN_DOMAIN"] ?: error("Missing Mailgun domain")
 
-    configureSecurity()
-    configureRouting(
-        appBaseUrl = appBaseUrl,
-        mailgunApiKey = mailgunApiKey,
-        mailgunDomain = mailgunDomain
-    )
+    val adminRepository = AdminRepository()
+    val adminService = AdminService(adminRepository)
+
+    val studentRepository = StudentRepository()
+    val studentService = StudentService(studentRepository)
+
+    val supervisorRepository = SupervisorRepository()
+    val supervisorService = SupervisorService(supervisorRepository)
+
+    val registrationRepository = RegistrationRepository()
+    val registrationService = RegistrationService(registrationRepository)
+
+    val authRepository = AuthRepository()
+    val authService = AuthService(authRepository)
 
     connectToDatabase()
     createTables()
@@ -62,16 +68,21 @@ fun Application.module() {
     createInitialAdmin()
     println("Initial admin created. Email: admin@agh.edu.pl, Password: admin123")
 
-    val studentService = StudentService()
-    // Sample usage (uncomment as needed)
-    // studentService.addStudent("bialecki@example.com", "marcinbialecki1", "Marcin", "Białecki")
-    // println("New student added.")
+    configureSecurity()
+    routing {
+        get("/") {
+            call.respondText("Hello World!")
+        }
+        get("/healthcheck") {
+            call.respondText("HEALTHCHECK")
+        }
 
-//    println("All students:")
-//    studentService.getAllStudents().forEach { student ->
-//        println(
-//            "ID: ${student[Students.id]}, Email: ${student[Students.mail]}, Password: ${student[Students.password]}, " +
-//                    "Name: ${student[Students.name]}, Surname: ${student[Students.surname]}"
-//        )
-//    }
+        registrationRoutes(registrationService, appBaseUrl, mailgunApiKey, mailgunDomain)
+        loginRoutes(authService)
+        adminRoutes(adminService)
+        supervisorRoutes(supervisorService, appBaseUrl, mailgunApiKey, mailgunDomain)
+        studentRoutes(studentService, appBaseUrl, mailgunApiKey, mailgunDomain)
+    }
+
+
 }
