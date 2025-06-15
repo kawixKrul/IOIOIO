@@ -147,7 +147,7 @@ export const mockApplications: ApplicationsResponse[] = [
         topicId: 1,
         topicTitle: "Machine Learning in Cybersecurity",
         description: "I'm interested in exploring AI applications in healthcare.",
-        status: 2, // Rejected
+        status: 0, // Rejected
         promoter: mockTopics.find(topic => topic.id === 1)?.promoter as PromoterInfo
     },
     {
