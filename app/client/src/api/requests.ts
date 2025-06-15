@@ -1,11 +1,10 @@
+import { mockApplications } from "./mock_data";
+
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
 // Base URL for your backend API
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
-/**
- * Enhanced makeRequest function with session-based authentication
- */
 export async function makeRequest(
   endpoint: string,
   method: string,
@@ -24,10 +23,8 @@ export async function makeRequest(
     body: data ? JSON.stringify(data) : undefined,
   });
 
-  // Handle authentication errors
   if (response.status === 401) {
-    // Session expired or user not authenticated
-    window.location.href = '/'; // Redirect to login page
+    window.location.href = '/'; 
     throw new Error('Session expired. Please login again.');
   }
 
@@ -64,7 +61,7 @@ export const studentApi = {
   },
 
   // TODO: Implement getApplications endpoint on backend
-  // getApplications: () => makeRequest("/student/applications", "GET"),
+  getApplications: () => mockApplications,
 
   // Apply for a thesis topic
   applyForTopic: (topicId: number, description: string): Promise<string> =>
@@ -107,7 +104,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
+  role: 'admin' | 'supervisor' | 'student' | string;
 }
 
 // Student-related types

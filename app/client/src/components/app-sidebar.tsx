@@ -2,20 +2,18 @@
 
 import * as React from "react"
 import {
-    AudioWaveform,
-    BookOpen,
-    Bot,
-    Command,
-    Frame,
     GalleryVerticalEnd,
-    Map,
-    PieChart,
+    BookOpen,
     Settings2,
-    SquareTerminal,
+    User,
+    Users,
+    FileText,
+    Shield,
+    Database,
+    BarChart3,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
@@ -25,44 +23,30 @@ import {
     SidebarHeader,
     SidebarRail,
 } from "@/components/ui/sidebar"
+import { useAuth } from "@/hooks/useAuth"
 
-// This is sample data.
-const data = {
-    user: {
-        name: "shadcn",
-        email: "m@example.com",
-        avatar: "/avatars/shadcn.jpg",
-    },
+// Application data
+const getTeamData = (userRole?: string) => ({
     teams: [
         {
-            name: "Acme Inc",
+            name: "Dyplom AGH",
             logo: GalleryVerticalEnd,
-            plan: "Enterprise",
-        },
+            plan: userRole === "SUPERVISOR" ? "Supervisor Panel" : 
+                  userRole === "ADMIN" ? "Admin Panel" : "Student Platform",
+        }
+    ]
+});
+
+// Role-based navigation
+const getNavigationForRole = (userRole?: string) => {
+    const baseNavigation = [
         {
-            name: "Acme Corp.",
-            logo: AudioWaveform,
-            plan: "Startup",
-        },
-        {
-            name: "Evil Corp.",
-            logo: Command,
-            plan: "Free",
-        },
-    ],
-    navMain: [
-        {
-            title: "Playground",
+            title: "Profile",
             url: "#",
-            icon: SquareTerminal,
-            isActive: true,
+            icon: User,
             items: [
                 {
-                    title: "History",
-                    url: "#",
-                },
-                {
-                    title: "Starred",
+                    title: "View Profile",
                     url: "#",
                 },
                 {
@@ -71,106 +55,250 @@ const data = {
                 },
             ],
         },
-        {
-            title: "Models",
-            url: "#",
-            icon: Bot,
-            items: [
+    ];
+
+    switch (userRole?.toLowerCase()) {
+        case "student":
+            return [
                 {
-                    title: "Genesis",
+                    title: "Thesis Topics",
+                    url: "/user",
+                    icon: BookOpen,
+                    isActive: true,
+                    items: [
+                        {
+                            title: "Available Topics",
+                            url: "/user",
+                        },
+                        {
+                            title: "My Applications",
+                            url: "/user",
+                        },
+                    ],
+                },
+                ...baseNavigation,
+                {
+                    title: "Settings",
                     url: "#",
+                    icon: Settings2,
+                    items: [
+                        {
+                            title: "General",
+                            url: "#",
+                        },
+                        {
+                            title: "Notifications",
+                            url: "#",
+                        },
+                    ],
+                },
+            ];
+
+        case "supervisor":
+            return [
+                {
+                    title: "My Topics",
+                    url: "/overseer",
+                    icon: BookOpen,
+                    isActive: true,
+                    items: [
+                        {
+                            title: "Manage Topics",
+                            url: "/overseer",
+                        },
+                        {
+                            title: "Add New Topic",
+                            url: "/overseer",
+                        },
+                    ],
                 },
                 {
-                    title: "Explorer",
+                    title: "Applications",
                     url: "#",
+                    icon: FileText,
+                    items: [
+                        {
+                            title: "Pending Applications",
+                            url: "#",
+                        },
+                        {
+                            title: "Approved Applications",
+                            url: "#",
+                        },
+                        {
+                            title: "Application History",
+                            url: "#",
+                        },
+                    ],
                 },
                 {
-                    title: "Quantum",
+                    title: "Students",
                     url: "#",
+                    icon: Users,
+                    items: [
+                        {
+                            title: "My Students",
+                            url: "#",
+                        },
+                        {
+                            title: "Student Progress",
+                            url: "#",
+                        },
+                    ],
                 },
-            ],
-        },
-        {
-            title: "Documentation",
-            url: "#",
-            icon: BookOpen,
-            items: [
+                ...baseNavigation,
                 {
-                    title: "Introduction",
+                    title: "Settings",
                     url: "#",
+                    icon: Settings2,
+                    items: [
+                        {
+                            title: "General",
+                            url: "#",
+                        },
+                        {
+                            title: "Notifications",
+                            url: "#",
+                        },
+                    ],
+                },
+            ];
+
+        case "admin":
+            return [
+                {
+                    title: "Dashboard",
+                    url: "#",
+                    icon: BarChart3,
+                    isActive: true,
+                    items: [
+                        {
+                            title: "Overview",
+                            url: "#",
+                        },
+                        {
+                            title: "Statistics",
+                            url: "#",
+                        },
+                        {
+                            title: "Reports",
+                            url: "#",
+                        },
+                    ],
                 },
                 {
-                    title: "Get Started",
+                    title: "User Management",
                     url: "#",
+                    icon: Shield,
+                    items: [
+                        {
+                            title: "All Users",
+                            url: "#",
+                        },
+                        {
+                            title: "Students",
+                            url: "#",
+                        },
+                        {
+                            title: "Supervisors",
+                            url: "#",
+                        },
+                        {
+                            title: "Admins",
+                            url: "#",
+                        },
+                    ],
                 },
                 {
-                    title: "Tutorials",
+                    title: "Topics Management",
                     url: "#",
+                    icon: Database,
+                    items: [
+                        {
+                            title: "All Topics",
+                            url: "#",
+                        },
+                        {
+                            title: "Pending Approval",
+                            url: "#",
+                        },
+                        {
+                            title: "Categories",
+                            url: "#",
+                        },
+                    ],
                 },
                 {
-                    title: "Changelog",
+                    title: "System",
                     url: "#",
+                    icon: Settings2,
+                    items: [
+                        {
+                            title: "System Settings",
+                            url: "#",
+                        },
+                        {
+                            title: "Backup & Restore",
+                            url: "#",
+                        },
+                        {
+                            title: "Logs",
+                            url: "#",
+                        },
+                    ],
                 },
-            ],
-        },
-        {
-            title: "Settings",
-            url: "#",
-            icon: Settings2,
-            items: [
+                ...baseNavigation,
+            ];
+
+        default:
+            // Guest or unknown role
+            return [
                 {
-                    title: "General",
-                    url: "#",
+                    title: "Welcome",
+                    url: "/",
+                    icon: BookOpen,
+                    isActive: true,
+                    items: [
+                        {
+                            title: "Login",
+                            url: "/",
+                        },
+                    ],
                 },
-                {
-                    title: "Team",
-                    url: "#",
-                },
-                {
-                    title: "Billing",
-                    url: "#",
-                },
-                {
-                    title: "Limits",
-                    url: "#",
-                },
-            ],
-        },
-    ],
-    projects: [
-        {
-            name: "Design Engineering",
-            url: "#",
-            icon: Frame,
-        },
-        {
-            name: "Sales & Marketing",
-            url: "#",
-            icon: PieChart,
-        },
-        {
-            name: "Travel",
-            url: "#",
-            icon: Map,
-        },
-    ],
-}
+            ];
+    }
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    // You can add the useAuth hook here later to get real user data
-    // const { user } = useAuth()
+    const { user, isAuthenticated } = useAuth()
     
-    // For now, use the mock data but this can be replaced with real user data
-    const userData = data.user; // Replace with: user ? { name: `${user.firstName} ${user.lastName}`, email: user.email, avatar: "/avatars/default.jpg" } : data.user
+    // Get user role, default to empty string if not authenticated
+    const userRole = isAuthenticated && user ? user.role : "";
+    
+    // Get role-specific data
+    const teamData = getTeamData(userRole);
+    const navigationData = getNavigationForRole(userRole);
+    
+    // Create user data for the sidebar
+    const userData = isAuthenticated && user ? {
+        name: user.firstName && user.lastName 
+            ? `${user.firstName} ${user.lastName}` 
+            : user.email,
+        email: user.email,
+        avatar: "/avatars/default.jpg",
+    } : {
+        name: "Guest User",
+        email: "guest@example.com",
+        avatar: "/avatars/default.jpg",
+    }
 
     return (
         <Sidebar collapsible="icon" {...props}>
             <SidebarHeader>
-                <TeamSwitcher teams={data.teams} />
+                <TeamSwitcher teams={teamData.teams} />
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={data.navMain} />
-                <NavProjects projects={data.projects} />
+                <NavMain items={navigationData} />
             </SidebarContent>
             <SidebarFooter>
                 <NavUser user={userData} />

@@ -62,7 +62,7 @@ interface ApplyTopicRequest {
     description: string
 }
 
-// New interface for student applications
+
 interface StudentApplication {
     id: number
     topicId: number
@@ -85,7 +85,6 @@ export default function UserPage() {
     const [selectedDegree, setSelectedDegree] = useState<'bsc' | 'msc' | ''>("")
     const [isSearching, setIsSearching] = useState(false)
 
-    // Fetch thesis topics
     const topicsQuery = useQuery({
         queryKey: ["thesisTopics"],
         queryFn: () => studentApi.getTopics(),
@@ -97,11 +96,11 @@ export default function UserPage() {
         queryKey: ["searchTopics", searchQuery, selectedDegree],
         queryFn: () => studentApi.searchTopics(searchQuery, selectedDegree || undefined),
         enabled: isSearching && searchQuery.trim().length > 0,
-    })    // Fetch student applications - TODO: implement backend endpoint
+    })    
     const applicationsQuery = useQuery({
         queryKey: ["studentApplications"],
-        queryFn: (): Promise<StudentApplication[]> => Promise.resolve([]), // Mock empty array until backend is implemented
-        enabled: false, // Disable until backend endpoint exists
+        queryFn: () => studentApi.getApplications(), // Mock empty array until backend is implemented
+        enabled: true, 
     })
 
     // Apply for a topic mutation
@@ -112,7 +111,6 @@ export default function UserPage() {
             alert("Application submitted successfully! The supervisor has been notified.")
             setIsApplyDialogOpen(false)
             setSelectedTopic(null)
-            // Invalidate the queries to refetch if necessary
             queryClient.invalidateQueries({ queryKey: ["thesisTopics"] })
             queryClient.invalidateQueries({ queryKey: ["studentApplications"] })
         },
@@ -152,7 +150,6 @@ export default function UserPage() {
         setIsSearching(false)
     }
 
-    // Determine which data to display
     const currentTopicsData = isSearching ? searchQuery_data : topicsQuery
     const displayTopics = currentTopicsData.data || []
 
