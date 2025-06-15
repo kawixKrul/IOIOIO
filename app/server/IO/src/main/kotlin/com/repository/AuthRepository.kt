@@ -11,6 +11,20 @@ class AuthRepository {
         Users.select { (Users.email eq email) and (Users.isActive eq true) }
             .singleOrNull()
     }
+    fun findUserProfile(userId: Int): Map<String, Any?> = transaction {
+        Users.select { Users.id eq userId }
+            .single()
+            .let { row ->
+                mapOf(
+                    "id" to row[Users.id].value,
+                    "email" to row[Users.email],
+                    "name" to row[Users.name],
+                    "surname" to row[Users.surname],
+                    "role" to row[Users.role],
+                    "isActive" to row[Users.isActive]
+                )
+            }
+    }
 
     fun createSession(
         userId: Int,
