@@ -62,17 +62,6 @@ interface ApplyTopicRequest {
     description: string
 }
 
-
-interface StudentApplication {
-    id: number
-    topicId: number
-    topicTitle: string
-    description: string
-    status: number // 0: pending, 1: accepted, 2: rejected
-    promoterName: string
-    promoterSurname: string
-}
-
 export default function UserPage() {
     const queryClient = useQueryClient()
     const [selectedTopic, setSelectedTopic] = useState<ThesisTopic | null>(null)
@@ -331,7 +320,7 @@ export default function UserPage() {
                                                     {renderApplicationStatus(application.status)}
                                                 </div>
                                                 <CardDescription>
-                                                    Promoter: {application.promoterName} {application.promoterSurname}
+                                                    Promoter: {application.promoter.name} {application.promoter.surname}
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
