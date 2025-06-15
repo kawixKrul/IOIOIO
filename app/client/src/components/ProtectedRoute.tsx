@@ -1,36 +1,31 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+// components/ProtectedRoute.tsx
+import { useAuth } from "@/hooks/useAuth";
+import { JSX } from "react";
+import { Navigate } from "react-router-dom";
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requiredRole?: string;
-}
-
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  requiredRole 
+export const ProtectedRoute = ({ 
+  children,
+  requiredRole
+}: {
+  children: JSX.Element,
+  requiredRole?: 'SUPERVISOR' | 'USER' 
 }) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { user, isLoading } = useAuth();
 
-  // Show loading spinner while checking authentication
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    );
+  if (isLoading) return <div>Loading...</div>;
+  
+  if (!user) return <Navigate to="/" />;
+  
+  // Check role if specified
+  if (requiredRole) {
+    const hasRequiredRole = 
+      (requiredRole === 'SUPERVISOR' && (user.role === 'supervisor' || user.role === 'admin')) ||
+      (requiredRole === 'USER' && user.role === 'student');
+      
+    if (!hasRequiredRole) {
+      return <Navigate to={requiredRole === 'SUPERVISOR' ? '/user' : '/supervisor'} />;
+    }
   }
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
-
-  // Check role-based access if required
-  if (requiredRole && user?.role !== requiredRole) {
-    return <Navigate to="/user" replace />;
-  }
-
-  return <>{children}</>;
+  return children;
 };

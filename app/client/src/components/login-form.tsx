@@ -32,9 +32,11 @@ export function LoginForm({
         setError(null);
 
         try {
-            await login(email, password);
-            // Navigation will be handled by the auth context after successful login
-            navigate("/user");
+            const profile = await login(email, password);
+            console.log(profile);
+            navigate("/supervisor"); // I do not fully understand what is going on. Looks like it is trying to navigate 
+            //everyone to /supervisor but since the student cannot do it it just simply renavigate it to /user instead 
+            //well it is tricky and i do not know why does it work but since it does i do not want to touch that shit ever again. 
         } catch (err) {
             setError(err instanceof Error ? err.message : "Login failed");
         } finally {

@@ -11,7 +11,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { makeRequest } from "@/api/requests";
 import {
@@ -21,6 +20,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface RegistrationData {
     email: string;
@@ -44,11 +44,10 @@ export function RegisterForm({
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
     const [surname, setSurname] = useState("");
-    const [role, setRole] = useState("student"); // Default to student
+    const [role, setRole] = useState<"student" | "supervisor">("student");
     const [expertiseField, setExpertiseField] = useState("");
     const [showActivationModal, setShowActivationModal] = useState(false);
 
-    // Registration mutation
     const registerMutation = useMutation({
         mutationFn: (data: RegistrationData) => 
             makeRequest("/register", "POST", data),
@@ -60,21 +59,19 @@ export function RegisterForm({
         }
     });
 
-    // Activation status query - enabled only when modal is shown
     const activationQuery = useQuery({
         queryKey: ['activationStatus', email],
         queryFn: () => 
             makeRequest(`/activation-status?email=${encodeURIComponent(email)}`, "GET") as Promise<ActivationStatus>,
         enabled: showActivationModal && !!email,
-        refetchInterval: 5000, // Poll every 5 seconds
+        refetchInterval: 5000,
     });
 
-    // Handle activation status changes
     useEffect(() => {
         if (activationQuery.data?.isActive) {
             setShowActivationModal(false);
             alert("Account activated successfully! You can now log in.");
-            onToggleForm(); // Switch to login form
+            onToggleForm();
         }
     }, [activationQuery.data, onToggleForm]);
 
@@ -92,6 +89,14 @@ export function RegisterForm({
         registerMutation.mutate(registrationData);
     };
 
+    const handleRoleChange = (newRole: "student" | "supervisor") => {
+        setRole(newRole);
+        // Clear expertise field when switching to student
+        if (newRole === "student") {
+            setExpertiseField("");
+        }
+    };
+
     return (
         <>
             <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -103,6 +108,19 @@ export function RegisterForm({
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
+                        <div className="flex justify-center mb-4">
+                            <Tabs 
+                                value={role} 
+                                onValueChange={(value) => handleRoleChange(value as "student" | "supervisor")}
+                                className="w-full"
+                            >
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="student">Student</TabsTrigger>
+                                    <TabsTrigger value="supervisor">Supervisor</TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                        </div>
+                        
                         <form onSubmit={handleRegister}>
                             <div className="flex flex-col gap-4">
                                 <div className="grid gap-2">
@@ -110,7 +128,7 @@ export function RegisterForm({
                                     <Input 
                                         id="name" 
                                         value={name} 
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)} 
+                                        onChange={(e) => setName(e.target.value)} 
                                         required 
                                         disabled={registerMutation.isPending}
                                     />
@@ -120,7 +138,7 @@ export function RegisterForm({
                                     <Input 
                                         id="surname" 
                                         value={surname} 
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSurname(e.target.value)} 
+                                        onChange={(e) => setSurname(e.target.value)} 
                                         required 
                                         disabled={registerMutation.isPending}
                                     />
@@ -130,17 +148,19 @@ export function RegisterForm({
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder="name@student.agh.edu.pl or name@agh.edu.pl"
+                                        placeholder={
+                                            role === "student" 
+                                                ? "name@student.agh.edu.pl" 
+                                                : "name@agh.edu.pl"
+                                        }
                                         value={email}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                        onChange={(e) => {
                                             setEmail(e.target.value);
-                                            // Basic role detection from email
-                                            if (e.target.value.includes("@student.agh.edu.pl")) {
-                                                setRole("student");
-                                            } else if (e.target.value.includes("@agh.edu.pl")) {
-                                                setRole("supervisor");
-                                            } else {
-                                                setRole("student"); // Default or handle error
+                                            // Auto-detect role from email if you want to keep this feature
+                                            if (e.target.value.endsWith("@student.agh.edu.pl")) {
+                                                handleRoleChange("student");
+                                            } else if (e.target.value.endsWith("@agh.edu.pl")) {
+                                                handleRoleChange("supervisor");
                                             }
                                         }}
                                         required
@@ -153,7 +173,7 @@ export function RegisterForm({
                                         id="password" 
                                         type="password" 
                                         value={password} 
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} 
+                                        onChange={(e) => setPassword(e.target.value)} 
                                         required 
                                         disabled={registerMutation.isPending}
                                     />
@@ -164,7 +184,7 @@ export function RegisterForm({
                                         <Input 
                                             id="expertiseField" 
                                             value={expertiseField} 
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setExpertiseField(e.target.value)} 
+                                            onChange={(e) => setExpertiseField(e.target.value)} 
                                             required 
                                             disabled={registerMutation.isPending}
                                         />
