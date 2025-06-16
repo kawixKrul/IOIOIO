@@ -6,6 +6,8 @@ import com.routers.ApplyTopicRequest
 import com.routers.ThesisTopicResponse
 import com.routers.ApplicationsResponse
 import com.routers.PromoterInfo
+import com.routers.StudentInfo
+import org.jetbrains.exposed.sql.alias
 
 class StudentService(private val repo: StudentRepository) {
 
@@ -52,23 +54,29 @@ class StudentService(private val repo: StudentRepository) {
         }
     }
 
-    fun getStudentApplications(studentId: Int): List<ApplicationsResponse> =
-        repo.getStudentApplications(studentId).map {
+    fun getStudentApplications(studentId: Int): List<ApplicationsResponse> {
+        val studentUser = com.database.table.Users.alias("student_user")
+        return repo.getStudentApplications(studentId).map {
             ApplicationsResponse(
                 id = it[com.database.table.Applications.id].value,
                 topicId = it[com.database.table.ThesesTopics.id].value,
                 topicTitle = it[com.database.table.ThesesTopics.title],
                 description = it[com.database.table.Applications.description],
                 status = it[com.database.table.Applications.status],
+                student = StudentInfo(
+                    id = it[studentUser[com.database.table.Users.id]].value,
+                    name = it[studentUser[com.database.table.Users.name]],
+                    surname = it[studentUser[com.database.table.Users.surname]],
+                ),
                 promoter = PromoterInfo(
-                    id = it[com.database.table.Supervisors.id].value,
+                    id = it[com.database.table.Users.id].value,
                     name = it[com.database.table.Users.name],
                     surname = it[com.database.table.Users.surname],
                     expertiseField = it[com.database.table.Supervisors.expertiseField]
                 )
             )
         }
-
+    }
     sealed class ApplyResult {
         object StudentNotFound : ApplyResult()
         object AlreadyConfirmed : ApplyResult()

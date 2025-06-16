@@ -42,33 +42,24 @@ class SupervisorRepository {
     }
 
     fun getThesisTopics(userId: Int) = transaction {
-        val supervisorId = Supervisors
-            .slice(Supervisors.id)
-            .select { Supervisors.userId eq userId }
-            .singleOrNull()?.get(Supervisors.id)
-            ?: return@transaction emptyList()
-
+        val supervisorId = getSupervisorIdByUserId(userId)
         (ThesesTopics innerJoin Supervisors innerJoin Users)
             .select { ThesesTopics.promoterId eq supervisorId }
             .toList()
     }
 
-    fun getSupervisorApplications(
-        userId: Int
-    ) = transaction {
-        val supervisorId = Supervisors
-            .slice(Supervisors.id)
-            .select { Supervisors.userId eq userId }
-            .singleOrNull()?.get(Supervisors.id)
-            ?: return@transaction emptyList()
+    fun getSupervisorApplications(userId: Int): List<ResultRow> = transaction {
+        val supervisorId = getSupervisorIdByUserId(userId) ?: return@transaction emptyList()
+        val studentUser = Users.alias("student_user")
 
         (Applications
             .innerJoin(ThesesTopics, { Applications.topicId }, { ThesesTopics.id })
             .innerJoin(Students, { Applications.studentId }, { Students.id })
-            .innerJoin(Users, { Students.userId }, { Users.id })
+            .innerJoin(studentUser, { Students.userId }, { studentUser[Users.id] }) // Student user info
+            .innerJoin(Supervisors, { ThesesTopics.promoterId }, { Supervisors.id })
+            .innerJoin(Users, { Supervisors.userId }, { Users.id }) // Supervisor user info
                 ).select { Applications.promoterId eq supervisorId }.toList()
     }
-
     data class ApplicationConfirmationData(
         val appId: Int,
         val studentId: Int,
