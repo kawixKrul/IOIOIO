@@ -24,12 +24,14 @@ import {
 import { useQuery} from "@tanstack/react-query"
 import { studentApi, supervisorApi } from "@/api/requests"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
+import { useAuth } from "@/hooks/useAuth"
+import { Button } from "@/components/ui/button"
+import { AddTopicDialog } from "@/components/AddTopicDialog"
 
 export default function SupervisorPage() {
     const [activeTab, setActiveTab] = useState("other-topics")
-    const supervisorId : number = 101
-
+    const { user } = useAuth();
+    console.log(user)
     interface PromoterInfo {
         id: number
         name: string
@@ -57,20 +59,22 @@ export default function SupervisorPage() {
         promoterName: string
         promoterSurname: string
     }
+    const handleAddTopic = async () => {
 
+    }
     const topicsQuery = useQuery({
         queryKey: ["thesisTopics"],
         queryFn: () => studentApi.getTopics(),
     })
 
     const supervisorTopicsQuery = useQuery({
-        queryKey: ["supervisorTopics", supervisorId],
-        queryFn: () => supervisorApi.getTopicsBySupervisorId(supervisorId),
+        queryKey: ["supervisorTopics"],
+        queryFn: () => supervisorApi.getSupervisorTopics(),
     })
 
     const supervisorApplicationsQuery = useQuery({
-        queryKey: ["supervisorApplications", supervisorId],
-        queryFn: () => supervisorApi.getApplicationsBySupervisorId(supervisorId),
+        queryKey: ["supervisorApplications"],
+        queryFn: () => supervisorApi.getSupervisorApplications,
     })
     const SupervisorMyTopicsTab = () => {
         const { data: topics, isSuccess: topicsSuccess, isError: topicsError, error: topicsErrorInfo, isPending: topicsLoading } = supervisorTopicsQuery;
@@ -81,12 +85,15 @@ export default function SupervisorPage() {
                 {topicsLoading && <p>Loading topics...</p>}
                 {topicsError && <p className="text-red-500">Error: {topicsErrorInfo.message}</p>}
                 {topicsSuccess && topics.length === 0 && (
-                    <p>No topics available at the moment.</p>
+                   <div className="flex flex-col items-center justify-center p-8">
+                                    <p className="text-lg text-muted-foreground mb-4">You have not submitted any topics yet.</p>
+                                    <AddTopicDialog />
+                                </div>
                 )}
                 {topicsSuccess && topics.length > 0 && (
                     <div className="grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {topics.map((topic) => {
-                            const waitingApplicationsCount = applicationsSuccess ?
+                            const waitingApplicationsCount = applicationsSuccess && Array.isArray(applications) ?
                                 applications.filter(app => app.topicId === topic.id && app.status === 0).length : 0;
                             return (
                                 <Card key={topic.id}>
