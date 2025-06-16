@@ -30,6 +30,11 @@ fun Route.supervisorRoutes(supervisorService: SupervisorService, appBaseUrl: Str
             call.respond(profile)
         }
     }
+    get("/supervisor/topics") {
+        val supervisorId = call.requireSupervisor() ?: return@get
+        val topics = supervisorService.getSupervisorTopics(supervisorId)
+        call.respond(topics)
+    }
 
     post("/supervisor/topics") {
         val userId = call.requireSupervisor() ?: return@post
@@ -44,6 +49,14 @@ fun Route.supervisorRoutes(supervisorService: SupervisorService, appBaseUrl: Str
         } else {
             call.respond(HttpStatusCode.Created, "Thesis topic added successfully")
         }
+    }
+
+    get("/supervisor/applications") {
+        val supervisorId = call.requireSupervisor() ?: return@get
+        call.respond(
+            HttpStatusCode.OK,
+            supervisorService.getSupervisorApplications(supervisorId)
+        )
     }
 
     get("/supervisor/confirm-application") {

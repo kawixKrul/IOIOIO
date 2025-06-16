@@ -33,6 +33,16 @@ data class PromoterInfo(
 )
 
 @Serializable
+data class ApplicationsResponse(
+    val id: Int,
+    val topicId: Int,
+    val topicTitle: String,
+    val description: String,
+    val status: Int, // 0=PENDING, 1=CONFIRMED, etc.
+    val promoter: PromoterInfo
+)
+
+@Serializable
 data class ApplyTopicRequest(
     val topicId: Int,
     val description: String
@@ -65,6 +75,11 @@ fun Route.studentRoutes(studentService: StudentService, appBaseUrl: String, mail
         }
 
         call.respond(HttpStatusCode.OK, studentService.searchTopics(query, degreeFilter))
+    }
+
+    get("/student/applications") {
+        val userId = call.currentUserId() ?: return@get
+        call.respond(HttpStatusCode.OK, studentService.getStudentApplications(userId))
     }
 
     post("/student/apply") {
