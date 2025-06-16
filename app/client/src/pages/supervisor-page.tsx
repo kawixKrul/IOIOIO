@@ -141,7 +141,70 @@ export default function SupervisorPage() {
             </TabsContent>
         );
     };
-
+    
+    const SupervisorOtherTopicsTab = () => {
+        return (
+            <TabsContent value="other-topics">
+                {topicsQuery.isPending && <p>Loading topics...</p>}
+                {topicsQuery.isError && (
+                    <p className="text-red-500">Error: {topicsQuery.error.message}</p>
+                )}
+                {topicsQuery.isSuccess && topicsQuery.data.length === 0 && (
+                    <p>No topics available at the moment.</p>
+                )}
+                {topicsQuery.isSuccess && topicsQuery.data.length > 0 && (
+                    <div className="grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {topicsQuery.data.map((topic) => (
+                            <Card key={topic.id}>
+                                <CardHeader>
+                                    <CardTitle>{topic.title}</CardTitle>
+                                    <CardDescription>
+                                        Degree: {topic.degreeLevel} - Slots:{" "}
+                                        {topic.availableSlots}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground">
+                                        {topic.description.substring(0, 150)}
+                                        {topic.description.length > 150
+                                            ? "..."
+                                            : ""}
+                                    </p>
+                                    <div className="mt-2">
+                                        <h4 className="text-xs font-semibold">
+                                            Promoter:
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground">
+                                            {topic.promoter.name}{" "}
+                                            {topic.promoter.surname} (
+                                            {topic.promoter.expertiseField})
+                                        </p>
+                                    </div>
+                                    {topic.tags && topic.tags.length > 0 && (
+                                        <div className="mt-2">
+                                            <h4 className="text-xs font-semibold">
+                                                Tags:
+                                            </h4>
+                                            <div className="flex flex-wrap gap-1">
+                                                {topic.tags.map((tag, index) => (
+                                                    <span
+                                                        key={index}
+                                                        className="px-2 py-0.5 text-xs bg-secondary text-secondary-foreground rounded-full"
+                                                    >
+                                                        {tag}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+            </TabsContent>
+        )
+    }
     return (
         <SidebarProvider>
             <AppSidebar />
@@ -179,65 +242,7 @@ export default function SupervisorPage() {
                                 <TabsTrigger className="flex-1" value="other-topics">Other Topics</TabsTrigger>
                         </TabsList>
                         <SupervisorMyTopicsTab></SupervisorMyTopicsTab>
-                        <TabsContent value="other-topics">
-                            {topicsQuery.isPending && <p>Loading topics...</p>}
-                            {topicsQuery.isError && (
-                                <p className="text-red-500">Error: {topicsQuery.error.message}</p>
-                            )}
-                            {topicsQuery.isSuccess && topicsQuery.data.length === 0 && (
-                                <p>No topics available at the moment.</p>
-                            )}
-                            {topicsQuery.isSuccess && topicsQuery.data.length > 0 && (
-                                <div className="grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                    {topicsQuery.data.map((topic) => (
-                                        <Card key={topic.id}>
-                                            <CardHeader>
-                                                <CardTitle>{topic.title}</CardTitle>
-                                                <CardDescription>
-                                                    Degree: {topic.degreeLevel} - Slots:{" "}
-                                                    {topic.availableSlots}
-                                                </CardDescription>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {topic.description.substring(0, 150)}
-                                                    {topic.description.length > 150
-                                                        ? "..."
-                                                        : ""}
-                                                </p>
-                                                <div className="mt-2">
-                                                    <h4 className="text-xs font-semibold">
-                                                        Promoter:
-                                                    </h4>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {topic.promoter.name}{" "}
-                                                        {topic.promoter.surname} (
-                                                        {topic.promoter.expertiseField})
-                                                    </p>
-                                                </div>
-                                                {topic.tags && topic.tags.length > 0 && (
-                                                    <div className="mt-2">
-                                                        <h4 className="text-xs font-semibold">
-                                                            Tags:
-                                                        </h4>
-                                                        <div className="flex flex-wrap gap-1">
-                                                            {topic.tags.map((tag, index) => (
-                                                                <span
-                                                                    key={index}
-                                                                    className="px-2 py-0.5 text-xs bg-secondary text-secondary-foreground rounded-full"
-                                                                >
-                                                                    {tag}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </div>
-                            )}
-                        </TabsContent>
+                        <SupervisorOtherTopicsTab></SupervisorOtherTopicsTab>
                     </Tabs>
                 </div>
             </SidebarInset>
