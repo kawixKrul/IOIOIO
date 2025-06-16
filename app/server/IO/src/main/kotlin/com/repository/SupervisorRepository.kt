@@ -41,6 +41,34 @@ class SupervisorRepository {
         }
     }
 
+    fun getThesisTopics(userId: Int) = transaction {
+        val supervisorId = Supervisors
+            .slice(Supervisors.id)
+            .select { Supervisors.userId eq userId }
+            .singleOrNull()?.get(Supervisors.id)
+            ?: return@transaction emptyList()
+
+        (ThesesTopics innerJoin Supervisors innerJoin Users)
+            .select { ThesesTopics.promoterId eq supervisorId }
+            .toList()
+    }
+
+    fun getSupervisorApplications(
+        userId: Int
+    ) = transaction {
+        val supervisorId = Supervisors
+            .slice(Supervisors.id)
+            .select { Supervisors.userId eq userId }
+            .singleOrNull()?.get(Supervisors.id)
+            ?: return@transaction emptyList()
+
+        (Applications
+            .innerJoin(ThesesTopics, { Applications.topicId }, { ThesesTopics.id })
+            .innerJoin(Students, { Applications.studentId }, { Students.id })
+            .innerJoin(Users, { Students.userId }, { Users.id })
+                ).select { Applications.promoterId eq supervisorId }.toList()
+    }
+
     data class ApplicationConfirmationData(
         val appId: Int,
         val studentId: Int,

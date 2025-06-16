@@ -4,6 +4,7 @@ import com.repository.StudentRepository
 import com.database.table.ApplicationStatus
 import com.routers.ApplyTopicRequest
 import com.routers.ThesisTopicResponse
+import com.routers.ApplicationsResponse
 import com.routers.PromoterInfo
 
 class StudentService(private val repo: StudentRepository) {
@@ -50,6 +51,23 @@ class StudentService(private val repo: StudentRepository) {
             return getTopics()
         }
     }
+
+    fun getStudentApplications(studentId: Int): List<ApplicationsResponse> =
+        repo.getStudentApplications(studentId).map {
+            ApplicationsResponse(
+                id = it[com.database.table.Applications.id].value,
+                topicId = it[com.database.table.ThesesTopics.id].value,
+                topicTitle = it[com.database.table.ThesesTopics.title],
+                description = it[com.database.table.Applications.description],
+                status = it[com.database.table.Applications.status],
+                promoter = PromoterInfo(
+                    id = it[com.database.table.Supervisors.id].value,
+                    name = it[com.database.table.Users.name],
+                    surname = it[com.database.table.Users.surname],
+                    expertiseField = it[com.database.table.Supervisors.expertiseField]
+                )
+            )
+        }
 
     sealed class ApplyResult {
         object StudentNotFound : ApplyResult()

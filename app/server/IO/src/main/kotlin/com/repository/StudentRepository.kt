@@ -78,4 +78,12 @@ class StudentRepository {
                     ) and (degreeFilter?.let { ThesesTopics.degreeLevel.lowerCase() eq it } ?: Op.TRUE)
         }.toList()
     }
+
+    fun getStudentApplications(studentId: Int): List<ResultRow> = transaction {
+        (Applications
+            .innerJoin(ThesesTopics, { Applications.topicId }, { ThesesTopics.id })
+            .innerJoin(Supervisors, { Applications.promoterId }, { Supervisors.id })
+            .innerJoin(Users, { Supervisors.userId }, { Users.id })
+                ).select { Applications.studentId eq studentId }.toList()
+    }
 }
