@@ -1,3 +1,4 @@
+import { getActiveResourcesInfo } from "process";
 import { ApplicationsResponse, mockApplications, mockTopics, ThesisTopicResponse } from "./mock_data";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
@@ -60,8 +61,8 @@ export const studentApi = {
     return makeRequest(`/student/topics/search?${params.toString()}`, "GET");
   },
 
-  // TODO: Implement getApplications endpoint on backend
-  getApplications: () => mockApplications,
+  // getApplications: () => mockApplications,
+  getApplications : () => makeRequest("/student/applications", "GET"),
 
   // Apply for a thesis topic
   applyForTopic: (topicId: number, description: string): Promise<string> =>
@@ -75,6 +76,7 @@ export const supervisorApi = {
   // Get supervisor profile
   getProfile: () => makeRequest("/supervisor/profile", "GET"),
 
+
   // Add a new thesis topic
   addTopic: (topicData: {
     title: string;
@@ -84,13 +86,32 @@ export const supervisorApi = {
     tags: string[];
   }) => makeRequest("/supervisor/topics", "POST", topicData),
 
-  getTopicsBySupervisorId: (supervisorId: number): ThesisTopicResponse[] => {
-        return mockTopics.filter(topic => topic.promoter.id === supervisorId);
+  getSupervisorTopics: async (): Promise<ThesisTopicResponse[]> => {
+      //return mockTopics.filter(topic => topic.promoter.id === supervisorId);
+    try {
+      const response = await makeRequest(`/supervisor/topics`, "GET");
+      return response as ThesisTopicResponse[];
+    } catch (error) {
+      console.error("Failed to fetch supervisor topics:", error);
+      throw new Error("Could not load topics");
+    }
   },
 
-  getApplicationsBySupervisorId: (supervisorId: number): ApplicationsResponse[] => {
-        return mockApplications.filter(application => application.promoter.id === supervisorId);
-  }
+  // getApplicationsBySupervisorId: (supervisorId: number): ApplicationsResponse[] => {
+  //       return mockApplications.filter(application => application.promoter.id === supervisorId);
+  // }
+  getSupervisorApplications: async (): Promise<ApplicationsResponse[]> => {
+      //return mockTopics.filter(topic => topic.promoter.id === supervisorId);
+    try {
+      const response = await makeRequest(`/supervisor/applications`, "GET");
+      return response as ApplicationsResponse[];
+    } catch (error) {
+      console.error("Failed to fetch supervisor applications:", error);
+      throw new Error("Could not load applications");
+    }
+  },
+
+
 }
 
 // Authentication types
@@ -138,21 +159,21 @@ export interface ApplyTopicRequest {
   description: string;
 }
 
-interface LoginCredentials {
+export interface LoginCredentials {
   email: string;
   password: string;
 }
 
-interface RegisterData {
+export interface RegisterData {
   email: string;
   password: string;
   name: string;
   surname: string;
-  role: string;
+  role: 'STUDENT' | 'SUPERVISOR';
   expertiseField?: string;
 }
 
-interface UserProfile {
+export interface UserProfile {
   id: number;
   email: string;
   name: string;
@@ -184,8 +205,8 @@ export const authApi = {
     return {
       id: response.id,
       email: response.email,
-      firstName: response.name,  // Maps 'name' to 'firstName'
-      lastName: response.surname, // Maps 'surname' to 'lastName'
+      firstName: response.name, 
+      lastName: response.surname, 
       role: response.role
     };
   },
