@@ -1,29 +1,7 @@
 // types/thesis.ts
-export interface PromoterInfo {
-    id: number;
-    name: string;
-    surname: string;
-    expertiseField: string;
-}
 
-export interface ThesisTopicResponse {
-    id: number;
-    title: string;
-    description: string;
-    degreeLevel: string;
-    availableSlots: number;
-    tags: string[];
-    promoter: PromoterInfo;
-}
+import { ThesisTopicResponse } from "./types";
 
-export interface ApplicationsResponse {
-    id: number;
-    topicId: number;
-    topicTitle: string; 
-    description: string; 
-    status: number; 
-    promoter: PromoterInfo;
-}
 
 export const mockTopics: ThesisTopicResponse[] = [
     {
@@ -141,29 +119,29 @@ export const mockTopics: ThesisTopicResponse[] = [
 ];
 
 
-export const mockApplications: ApplicationsResponse[] = [
-    {
-        id: 1,
-        topicId: 1,
-        topicTitle: "Machine Learning in Cybersecurity",
-        description: "I'm interested in exploring AI applications in healthcare.",
-        status: 0, // Rejected
-        promoter: mockTopics.find(topic => topic.id === 1)?.promoter as PromoterInfo
-    },
-    {
-        id: 2,
-        topicId: 2,
-        topicTitle: "Blockchain for Supply Chain Management",
-        description: "I want to research blockchain applications in finance.",
-        status: 1, // Accepted
-        promoter: mockTopics.find(topic => topic.id === 2)?.promoter as PromoterInfo
-    },
-    {
-        id: 3,
-        topicId: 3,
-        topicTitle: "Quantum Computing Algorithms",
-        description: "Hello, I'm interested in quantum computing for algorithm development.",
-        status: 3, // Withdrawn
-        promoter: mockTopics.find(topic => topic.id === 3)?.promoter as PromoterInfo
-    }
-];
+// export const mockApplications: ApplicationsResponse[] = [
+//     {
+//         id: 1,
+//         topicId: 1,
+//         topicTitle: "Machine Learning in Cybersecurity",
+//         description: "I'm interested in exploring AI applications in healthcare.",
+//         status: 0, // Rejected
+//         promoter: mockTopics.find(topic => topic.id === 1)?.promoter as PromoterInfo
+//     },
+//     {
+//         id: 2,
+//         topicId: 2,
+//         topicTitle: "Blockchain for Supply Chain Management",
+//         description: "I want to research blockchain applications in finance.",
+//         status: 1, // Accepted
+//         promoter: mockTopics.find(topic => topic.id === 2)?.promoter as PromoterInfo
+//     },
+//     {
+//         id: 3,
+//         topicId: 3,
+//         topicTitle: "Quantum Computing Algorithms",
+//         description: "Hello, I'm interested in quantum computing for algorithm development.",
+//         status: 3, // Withdrawn
+//         promoter: mockTopics.find(topic => topic.id === 3)?.promoter as PromoterInfo
+//     }
+// ];

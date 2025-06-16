@@ -1,3 +1,4 @@
+import type { ThesisTopic, ApplyTopicRequest } from '../api/types'
 import * as React from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import {
@@ -40,27 +41,6 @@ import { studentApi } from "@/api/requests"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 
-interface PromoterInfo {
-    id: number
-    name: string
-    surname: string
-    expertiseField: string
-}
-
-interface ThesisTopic {
-    id: number
-    title: string
-    description: string
-    degreeLevel: string
-    availableSlots: number
-    tags: string[]
-    promoter: PromoterInfo
-}
-
-interface ApplyTopicRequest {
-    topicId: number
-    description: string
-}
 
 export default function UserPage() {
     const queryClient = useQueryClient()

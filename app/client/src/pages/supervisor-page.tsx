@@ -18,6 +18,7 @@ import {
     Card,
     CardContent,
     CardDescription,
+    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
@@ -25,43 +26,28 @@ import { useQuery} from "@tanstack/react-query"
 import { studentApi, supervisorApi } from "@/api/requests"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/hooks/useAuth"
-import { Button } from "@/components/ui/button"
 import { AddTopicDialog } from "@/components/AddTopicDialog"
+import { Badge } from "@/components/ui/badge"
 
 export default function SupervisorPage() {
     const [activeTab, setActiveTab] = useState("other-topics")
     const { user } = useAuth();
     console.log(user)
-    interface PromoterInfo {
-        id: number
-        name: string
-        surname: string
-        expertiseField: string
+    const renderApplicationStatus = (status: number) => {
+        switch (status) {
+            case 0:
+                return <Badge variant="outline" className="bg-yellow-100">Pending</Badge>
+            case 1:
+                return <Badge variant="outline" className="bg-green-100">Accepted</Badge>
+            case 2:
+                return <Badge variant="outline" className="bg-red-100">Rejected</Badge>
+            case 3:
+                return <Badge variant="outline" className="bg-grey-100">Withdrawn</Badge>
+            default:
+                return <Badge variant="outline">Unknown</Badge>
+        }
     }
 
-    interface ThesisTopic {
-        id: number
-        title: string
-        description: string
-        degreeLevel: string
-        availableSlots: number
-        tags: string[]
-        promoter: PromoterInfo
-    }
-
-    // New interface for student applications
-    interface StudentApplication {
-        id: number
-        topicId: number
-        topicTitle: string
-        description: string
-        status: number // 0: pending, 1: accepted, 2: rejected
-        promoterName: string
-        promoterSurname: string
-    }
-    const handleAddTopic = async () => {
-
-    }
     const topicsQuery = useQuery({
         queryKey: ["thesisTopics"],
         queryFn: () => studentApi.getTopics(),
@@ -74,7 +60,7 @@ export default function SupervisorPage() {
 
     const supervisorApplicationsQuery = useQuery({
         queryKey: ["supervisorApplications"],
-        queryFn: () => supervisorApi.getSupervisorApplications,
+        queryFn: () => supervisorApi.getSupervisorApplications(),
     })
     const SupervisorMyTopicsTab = () => {
         const { data: topics, isSuccess: topicsSuccess, isError: topicsError, error: topicsErrorInfo, isPending: topicsLoading } = supervisorTopicsQuery;
@@ -85,64 +71,68 @@ export default function SupervisorPage() {
                 {topicsLoading && <p>Loading topics...</p>}
                 {topicsError && <p className="text-red-500">Error: {topicsErrorInfo.message}</p>}
                 {topicsSuccess && topics.length === 0 && (
-                   <div className="flex flex-col items-center justify-center p-8">
-                                    <p className="text-lg text-muted-foreground mb-4">You have not submitted any topics yet.</p>
-                                    <AddTopicDialog />
-                                </div>
+                    <div className="flex flex-col items-center justify-center p-8">
+                        <p className="text-lg text-muted-foreground mb-4">You have not submitted any topics yet.</p>
+                        <AddTopicDialog />
+                    </div>
                 )}
                 {topicsSuccess && topics.length > 0 && (
-                    <div className="grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {topics.map((topic) => {
-                            const waitingApplicationsCount = applicationsSuccess && Array.isArray(applications) ?
-                                applications.filter(app => app.topicId === topic.id && app.status === 0).length : 0;
-                            return (
-                                <Card key={topic.id}>
-                                    <CardHeader>
-                                        <CardTitle>{topic.title}</CardTitle>
-                                        <CardDescription>
-                                            Degree: {topic.degreeLevel} - Slots: {topic.availableSlots}
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-sm text-muted-foreground">
-                                            {topic.description.substring(0, 150)}{topic.description.length > 150 ? "..." : ""}
-                                        </p>
-                                       {waitingApplicationsCount === 1 && (
+                    <div>
+                        <div className="flex justify-end mb-4">
+                            <AddTopicDialog />
+                        </div>
+                        <div className="grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {topics.map((topic) => {
+                                const waitingApplicationsCount = applicationsSuccess && Array.isArray(applications) ?
+                                    applications.filter(app => app.topicId === topic.id && app.status === 0).length : 0;
+                                return (
+                                    <Card key={topic.id}>
+                                        <CardHeader>
+                                            <CardTitle>{topic.title}</CardTitle>
+                                            <CardDescription>
+                                                Degree: {topic.degreeLevel} - Slots: {topic.availableSlots}
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-sm text-muted-foreground">
+                                                {topic.description.substring(0, 150)}{topic.description.length > 150 ? "..." : ""}
+                                            </p>
+                                            {waitingApplicationsCount === 1 && (
+                                                <div className="mt-2">
+                                                    <h4 className="text-xs font-semibold" style={{ color: "red" }}>
+                                                        There is 1 pending application, waiting for your review.
+                                                    </h4>
+                                                </div>
+                                            )}
+                                            {waitingApplicationsCount > 1 && (
+                                                <div className="mt-2">
+                                                    <h4 className="text-xs font-semibold" style={{ color: "red" }}>
+                                                        There are {waitingApplicationsCount} pending applications, waiting for your review.
+                                                    </h4>
+                                                </div>
+                                            )}
+                                            {topic.availableSlots === 0 && (
+                                                <div className="mt-2">
+                                                    <h4 className="text-xs font-semibold" style={{ color: "green" }}>
+                                                        There are no available left slots for this topic!
+                                                    </h4>
+                                                </div>
+                                            )}
                                             <div className="mt-2">
-                                                <h4 className="text-xs font-semibold" style={{ color: "red" }}>
-                                                    There is 1 pending application, waiting for your review.
-                                                </h4>
+                                                <h4 className="text-xs font-semibold">Tags:</h4>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {topic.tags.map((tag, index) => (
+                                                        <span key={index} className="px-2 py-0.5 text-xs bg-secondary text-secondary-foreground rounded-full">
+                                                            {tag}
+                                                        </span>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        )}
-                                        {waitingApplicationsCount > 1 && (
-                                            <div className="mt-2">
-                                                <h4 className="text-xs font-semibold" style={{ color: "red" }}>
-                                                    There are {waitingApplicationsCount} pending applications, waiting for your review.
-                                                </h4>
-                                            </div>
-                                        )}
-                                        {topic.availableSlots === 0 && (
-                                             <div className="mt-2">
-                                                <h4 className="text-xs font-semibold" style={{ color: "green" }}>
-                                                    There are no available left slots for this topic!
-                                                </h4>
-                                            </div>
-                                        )
-                                        }
-                                        <div className="mt-2">
-                                            <h4 className="text-xs font-semibold">Tags:</h4>
-                                            <div className="flex flex-wrap gap-1">
-                                                {topic.tags.map((tag, index) => (
-                                                    <span key={index} className="px-2 py-0.5 text-xs bg-secondary text-secondary-foreground rounded-full">
-                                                        {tag}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            );
-                        })}
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
             </TabsContent>
@@ -212,6 +202,53 @@ export default function SupervisorPage() {
             </TabsContent>
         )
     }
+
+    const SupervisorApplicationsTab = () => {
+        const { data: applications, isPending, isError, error, isSuccess } = supervisorApplicationsQuery;
+        return (
+            <TabsContent value="applications">
+                {isPending && <p>Loading your applications...</p>}
+                {isError && (
+                    <p className="text-red-500">Error: {error.message}</p>
+                )}
+                {isSuccess && applications.length === 0 && (
+                    <div className="flex flex-col items-center justify-center p-8">
+                        <p className="text-lg text-muted-foreground mb-4">Noone applied for your topics yet.</p>
+                
+                    </div>
+                )}
+                {isSuccess && applications.length > 0 && (
+                    <div className="grid auto-rows-min gap-4 md:grid-cols-2">
+                        {applications.map((application) => (
+                            <Card key={application.id}>
+                                <CardHeader>
+                                    <div className="flex justify-between items-start">
+                                        <CardTitle>{application.topicTitle}</CardTitle>
+                                        {renderApplicationStatus(application.status)}
+                                    </div>
+                                    <CardDescription>
+                                        Student: {application.student.name} {application.student.surname}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <h4 className="text-xs font-semibold mb-1">Student's application message:</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        {application.description || "No message provided"}
+                                    </p>
+                                </CardContent>
+                                <CardFooter className="flex justify-between">
+                                    <p className="text-xs text-muted-foreground">
+                                        Application ID: {application.id}
+                                    </p>
+                                </CardFooter>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+            </TabsContent>
+        );
+    };
+
     return (
         <SidebarProvider>
             <AppSidebar />
@@ -249,6 +286,7 @@ export default function SupervisorPage() {
                                 <TabsTrigger className="flex-1" value="other-topics">Other Topics</TabsTrigger>
                         </TabsList>
                         <SupervisorMyTopicsTab></SupervisorMyTopicsTab>
+                        <SupervisorApplicationsTab></SupervisorApplicationsTab>
                         <SupervisorOtherTopicsTab></SupervisorOtherTopicsTab>
                     </Tabs>
                 </div>

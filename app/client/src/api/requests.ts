@@ -1,6 +1,4 @@
-import { getActiveResourcesInfo } from "process";
-import { ApplicationsResponse, mockApplications, mockTopics, ThesisTopicResponse } from "./mock_data";
-
+import { ApplicationsResponse, ThesisTopicResponse, LoginCredentials, RegisterData, User } from './types';
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
 // Base URL for your backend API
@@ -112,75 +110,6 @@ export const supervisorApi = {
   },
 
 
-}
-
-// Authentication types
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface RegisterData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: 'STUDENT' | 'SUPERVISOR';
-}
-
-export interface User {
-  id: number;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: 'admin' | 'supervisor' | 'student' | string;
-}
-
-// Student-related types
-export interface PromoterInfo {
-  id: number;
-  name: string;
-  surname: string;
-  expertiseField: string;
-}
-
-export interface ThesisTopicResponse {
-  id: number;
-  title: string;
-  description: string;
-  degreeLevel: string;
-  availableSlots: number;
-  tags: string[];
-  promoter: PromoterInfo;
-}
-
-export interface ApplyTopicRequest {
-  topicId: number;
-  description: string;
-}
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface RegisterData {
-  email: string;
-  password: string;
-  name: string;
-  surname: string;
-  role: 'STUDENT' | 'SUPERVISOR';
-  expertiseField?: string;
-}
-
-export interface UserProfile {
-  id: number;
-  email: string;
-  name: string;
-  surname: string;
-  role: 'admin' | 'supervisor' | 'student';
-  isActive: boolean;
-  createdAt?: string;
 }
 
 /**
