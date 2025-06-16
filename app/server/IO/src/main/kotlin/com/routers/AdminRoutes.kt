@@ -5,7 +5,6 @@ import com.utils.requireAdmin
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-
 fun Routing.adminRoutes(adminService: AdminService) {
     get("/admin/panel") {
         val userId = call.requireAdmin() ?: return@get

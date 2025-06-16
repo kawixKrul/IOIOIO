@@ -12,6 +12,11 @@ class StudentRepository {
             ?.let { it[Students.id].value to it[Users.email] }
     }
 
+    fun getStudentIdByUserId(userId: Int): Int? = transaction {
+        Students.select { Students.userId eq userId }
+            .singleOrNull()?.get(Students.id)?.value
+    }
+
     fun studentHasConfirmedApplication(studentId: Int): Boolean = transaction {
         Applications.select {
             (Applications.studentId eq studentId) and
@@ -79,11 +84,15 @@ class StudentRepository {
         }.toList()
     }
 
-    fun getStudentApplications(studentId: Int): List<ResultRow> = transaction {
+    fun getStudentApplications(userId: Int): List<ResultRow> = transaction {
+        val studentId =  getStudentIdByUserId(userId) ?: return@transaction emptyList()
+        val studentUser = Users.alias("student_user")
         (Applications
             .innerJoin(ThesesTopics, { Applications.topicId }, { ThesesTopics.id })
             .innerJoin(Supervisors, { Applications.promoterId }, { Supervisors.id })
             .innerJoin(Users, { Supervisors.userId }, { Users.id })
+            .innerJoin(Students, { Applications.studentId }, { Students.id })
+            .innerJoin(studentUser, { Students.userId }, { studentUser[Users.id] })
                 ).select { Applications.studentId eq studentId }.toList()
     }
 }

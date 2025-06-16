@@ -33,12 +33,20 @@ data class PromoterInfo(
 )
 
 @Serializable
+data class StudentInfo(
+    val id: Int,
+    val name: String,
+    val surname: String,
+)
+
+@Serializable
 data class ApplicationsResponse(
     val id: Int,
     val topicId: Int,
     val topicTitle: String,
     val description: String,
     val status: Int, // 0=PENDING, 1=CONFIRMED, etc.
+    val student: StudentInfo,
     val promoter: PromoterInfo
 )
 

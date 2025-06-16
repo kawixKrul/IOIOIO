@@ -1,11 +1,15 @@
 package com.service
 
+import com.database.table.Students
+import com.database.table.Users
 import com.repository.SupervisorRepository
 import com.repository.SupervisorProfile
 import com.routers.ApplicationsResponse
 import com.routers.PromoterInfo
+import com.routers.StudentInfo
 import com.routers.ThesisTopicRequest
 import com.routers.ThesisTopicResponse
+import org.jetbrains.exposed.sql.alias
 
 class SupervisorService(private val repo: SupervisorRepository) {
 
@@ -28,7 +32,7 @@ class SupervisorService(private val repo: SupervisorRepository) {
                 availableSlots = it[com.database.table.ThesesTopics.availableSlots],
                 tags = it[com.database.table.ThesesTopics.tagsList].split(",").map(String::trim),
                 promoter = PromoterInfo(
-                    id = it[com.database.table.Supervisors.id].value,
+                    id = it[com.database.table.Users.id].value,
                     name = it[com.database.table.Users.name],
                     surname = it[com.database.table.Users.surname],
                     expertiseField = it[com.database.table.Supervisors.expertiseField]
@@ -36,22 +40,29 @@ class SupervisorService(private val repo: SupervisorRepository) {
             )
         }
 
-    fun getSupervisorApplications(supervisorId: Int): List<ApplicationsResponse> =
-        repo.getSupervisorApplications(supervisorId).map {
+    fun getSupervisorApplications(userId: Int): List<ApplicationsResponse> {
+        val studentUser = com.database.table.Users.alias("student_user")
+        return repo.getSupervisorApplications(userId).map {
             ApplicationsResponse(
                 id = it[com.database.table.Applications.id].value,
                 topicId = it[com.database.table.ThesesTopics.id].value,
                 topicTitle = it[com.database.table.ThesesTopics.title],
                 description = it[com.database.table.Applications.description],
                 status = it[com.database.table.Applications.status],
+                student = StudentInfo(
+                    id = it[studentUser[com.database.table.Users.id]].value,
+                    name = it[studentUser[com.database.table.Users.name]],
+                    surname = it[studentUser[com.database.table.Users.surname]]
+                ),
                 promoter = PromoterInfo(
-                    id = it[com.database.table.Supervisors.id].value,
+                    id = it[com.database.table.Users.id].value,
                     name = it[com.database.table.Users.name],
                     surname = it[com.database.table.Users.surname],
                     expertiseField = it[com.database.table.Supervisors.expertiseField]
                 )
             )
         }
+    }
 
     sealed class ConfirmationResult {
         data class Success(val studentEmail: String, val topicTitle: String) : ConfirmationResult()
