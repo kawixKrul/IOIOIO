@@ -6,7 +6,7 @@ import com.routers.ApplyTopicRequest
 import com.routers.ThesisTopicResponse
 import com.routers.PromoterInfo
 
-class StudentService(private val repo: StudentRepository) {
+class StudentService(private val repo: StudentRepository, private val applicationService: ApplicationService) {
 
     fun getTopics(): List<ThesisTopicResponse> =
         repo.getAllTopics().map {
@@ -93,4 +93,16 @@ class StudentService(private val repo: StudentRepository) {
             confirmationToken = confirmationToken
         )
     }
+
+    fun withdrawApplication(
+        userId: Int,
+        applicationId: Int
+    ): Boolean {
+        return applicationService.answerApplication(
+            applicationId = applicationId,
+            newStatus = ApplicationStatus.WITHDRAWN,
+            supervisorId = userId
+        ) is ApplicationService.AnswerApplicationResult.Success
+    }
+
 }

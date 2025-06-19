@@ -1,9 +1,11 @@
 package com.repository
 
 import com.database.table.*
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
+@Serializable
 data class UserDto(
     val id: Int,
     val email: String,

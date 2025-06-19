@@ -1,6 +1,7 @@
 package com.routers
 
 import com.repository.StudentRepository
+import com.service.ApplicationService
 import com.service.StudentService
 import com.service.sendNotificationEmail
 import com.utils.currentUserId
@@ -104,4 +105,42 @@ fun Route.studentRoutes(studentService: StudentService, appBaseUrl: String, mail
             }
         }
     }
+
+    post("/student/application-withdraw") {
+        // 1. Get current user and validate input
+        val userId = call.currentUserId() ?: return@post
+        val applicationId = call.request.queryParameters["applicationId"]?.toIntOrNull() ?: run {
+            call.respond(HttpStatusCode.BadRequest, mapOf(
+                "error" to "MISSING_APPLICATION_ID",
+                "message" to "Please provide a valid application ID"
+            ))
+            return@post
+        }
+
+        // 2. Process withdrawal
+        try {
+            val success = studentService.withdrawApplication(userId, applicationId)
+
+            if (success) {
+                call.respond(HttpStatusCode.OK, mapOf(
+                    "message" to "Application withdrawn successfully",
+                    "applicationId" to applicationId
+                ))
+            } else {
+                call.respond(HttpStatusCode.NotFound, mapOf(
+                    "error" to "APPLICATION_NOT_FOUND",
+                    "message" to "Application not found or you don't have permission",
+                    "applicationId" to applicationId
+                ))
+            }
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.InternalServerError, mapOf(
+                "error" to "WITHDRAWAL_FAILED",
+                "message" to "Failed to withdraw application",
+                "details" to e.message
+            ))
+        }
+    }
+
+
 }

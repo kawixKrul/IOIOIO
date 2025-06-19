@@ -49,11 +49,14 @@ fun Application.module() {
     val adminRepository = AdminRepository()
     val adminService = AdminService(adminRepository)
 
+    val applicationRepository = ApplicationRepository()
+    val applicationService = ApplicationService(applicationRepository)
+
     val studentRepository = StudentRepository()
-    val studentService = StudentService(studentRepository)
+    val studentService = StudentService(studentRepository, applicationService)
 
     val supervisorRepository = SupervisorRepository()
-    val supervisorService = SupervisorService(supervisorRepository)
+    val supervisorService = SupervisorService(supervisorRepository, applicationService)
 
     val registrationRepository = RegistrationRepository()
     val registrationService = RegistrationService(registrationRepository)

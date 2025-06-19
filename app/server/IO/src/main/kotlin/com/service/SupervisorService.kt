@@ -1,10 +1,16 @@
 package com.service
 
+import com.database.table.*
+import com.repository.ApplicationRepository
 import com.repository.SupervisorRepository
 import com.repository.SupervisorProfile
 import com.routers.ThesisTopicRequest
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.transactions.transaction
 
-class SupervisorService(private val repo: SupervisorRepository) {
+class SupervisorService(private val repo: SupervisorRepository,
+                        private val applicationService: ApplicationService) {
 
     fun getProfile(userId: Int): SupervisorProfile? =
         repo.getProfile(userId)
@@ -15,21 +21,36 @@ class SupervisorService(private val repo: SupervisorRepository) {
         return true
     }
 
-    sealed class ConfirmationResult {
-        data class Success(val studentEmail: String, val topicTitle: String) : ConfirmationResult()
-        data object AlreadyConfirmed : ConfirmationResult()
-        data object NoSlots : ConfirmationResult()
-        data object NotFound : ConfirmationResult()
+    fun deleteThesisTopic(topicId: Int, supervisorId: Int): Boolean = transaction {
+        // Check if the topic exists and belongs to the supervisor
+        val topic = ThesesTopics.select {
+            (ThesesTopics.id eq topicId) and (ThesesTopics.promoterId eq supervisorId)
+        }.singleOrNull() ?: return@transaction false
+
+        // Delete the topic
+        ThesesTopics.deleteWhere { ThesesTopics.id eq topicId }
+        return@transaction true
     }
 
-    fun confirmApplication(token: String): ConfirmationResult {
-        val data = repo.getApplicationConfirmationData(token) ?: return ConfirmationResult.NotFound
+    // Delegate application handling to ApplicationService
+    fun answerApplication(
+        applicationId: Int,
+        newStatus: ApplicationStatus,
+        supervisorId: Int
+    ) = applicationService.answerApplication(
+        applicationId = applicationId,
+        newStatus = newStatus,
+        supervisorId = supervisorId
+    )
+
+    fun confirmApplication(token: String): ApplicationService.ConfirmationResult {
+        val data = repo.getApplicationConfirmationData(token) ?: return ApplicationService.ConfirmationResult.NotFound
 
         if (repo.studentHasConfirmed(data.studentId)) {
-            return ConfirmationResult.AlreadyConfirmed
+            return ApplicationService.ConfirmationResult.AlreadyConfirmed
         }
         if (data.currentSlots <= 0) {
-            return ConfirmationResult.NoSlots
+            return ApplicationService.ConfirmationResult.NoSlots
         }
 
         // Confirm the application
@@ -39,7 +60,7 @@ class SupervisorService(private val repo: SupervisorRepository) {
         // Reject other pending applications from student
         repo.rejectOtherPendingApplications(data.studentId, data.appId)
 
-        val studentEmail = repo.getStudentEmail(data.studentId) ?: return ConfirmationResult.NotFound
-        return ConfirmationResult.Success(studentEmail, data.topicTitle)
+        val studentEmail = repo.getStudentEmail(data.studentId) ?: return ApplicationService.ConfirmationResult.NotFound
+        return ApplicationService.ConfirmationResult.Success(studentEmail, data.topicTitle)
     }
 }
