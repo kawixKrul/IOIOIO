@@ -97,6 +97,13 @@ class SupervisorRepository {
         }
     }
 
+    fun rejectApplication(appId: Int) = transaction {
+        Applications.update({ Applications.id eq appId }) {
+            it[Applications.status] = ApplicationStatus.REJECTED.code
+            it[Applications.confirmationToken] = null
+        }
+    }
+
     fun decreaseAvailableSlots(topicId: Int) = transaction {
         ThesesTopics.update({ ThesesTopics.id eq topicId }) {
             with(SqlExpressionBuilder) {
