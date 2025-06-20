@@ -90,6 +90,21 @@ fun Route.studentRoutes(studentService: StudentService, appBaseUrl: String, mail
         call.respond(HttpStatusCode.OK, studentService.getStudentApplications(userId))
     }
 
+    post("/student/withdraw-application"){
+        val userId = call.currentUserId() ?: return@post
+        val applicationId = call.request.queryParameters["applicationId"]?.toIntOrNull() ?: run {
+            call.respond(
+                HttpStatusCode.BadRequest, mapOf(
+                    "error" to "MISSING_APPLICATION_ID",
+                    "message" to "Please provide a valid application ID"
+                )
+            )
+            return@post
+        }
+        println(applicationId)
+        call.respond(HttpStatusCode.OK, studentService.withdrawApplication(applicationId))
+
+    }
     post("/student/apply") {
         val userId = call.currentUserId() ?: return@post
         val req = call.receive<ApplyTopicRequest>()

@@ -119,4 +119,8 @@ class StudentService(private val repo: StudentRepository) {
             confirmationToken = confirmationToken
         )
     }
+
+    fun withdrawApplication(applicationId: Int){
+        repo.withdrawApplication(applicationId)
+    }
 }

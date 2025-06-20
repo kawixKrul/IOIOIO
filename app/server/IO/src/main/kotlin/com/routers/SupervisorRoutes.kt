@@ -7,6 +7,7 @@ import com.utils.requireSupervisor
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
+import io.ktor.server.response.respond
 import io.ktor.server.routing.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -59,35 +60,62 @@ fun Route.supervisorRoutes(supervisorService: SupervisorService, appBaseUrl: Str
         )
     }
 
-    get("/supervisor/confirm-application") {
-        val userId = call.requireSupervisor() ?: return@get
-        val token = call.request.queryParameters["token"]
-        if (token.isNullOrBlank()) {
-            call.respond(HttpStatusCode.BadRequest, "Activation token is missing.")
-            return@get
+//    get("/supervisor/confirm-application") {
+//        val userId = call.requireSupervisor() ?: return@get
+//        val token = call.request.queryParameters["token"]
+//        if (token.isNullOrBlank()) {
+//            call.respond(HttpStatusCode.BadRequest, "Activation token is missing.")
+//            return@get
+//        }
+//        when (val result = supervisorService.confirmApplication(token)) {
+//            is SupervisorService.ConfirmationResult.Success -> {
+//                call.application.launch {
+//                    sendNotificationEmail(
+//                        mailApiKey,
+//                        mailDomain,
+//                        email = result.studentEmail,
+//                        subject = "Your application has been confirmed!",
+//                        text = """
+//                            Your supervisor has confirmed your application for the topic: ${result.topicTitle}.
+//                            Congratulations!
+//                        """.trimIndent()
+//                    )
+//                }
+//                call.respondText("Application confirmed! The student has been notified.")
+//            }
+//            SupervisorService.ConfirmationResult.AlreadyConfirmed ->
+//                call.respond(HttpStatusCode.BadRequest, "Student already has a confirmed application.")
+//            SupervisorService.ConfirmationResult.NoSlots ->
+//                call.respond(HttpStatusCode.BadRequest, "No available slots for this topic.")
+//            SupervisorService.ConfirmationResult.NotFound ->
+//                call.respond(HttpStatusCode.BadRequest, "Invalid token or application not found.")
+//        }
+//    }
+    post("/supervisor/confirm-application") {
+        val applicationId = call.request.queryParameters["applicationId"]?.toIntOrNull() ?: run {
+            call.respond(
+                HttpStatusCode.BadRequest, mapOf(
+                    "error" to "MISSING_APPLICATION_ID",
+                    "message" to "Please provide a valid application ID"
+                )
+            )
+            return@post
         }
-        when (val result = supervisorService.confirmApplication(token)) {
-            is SupervisorService.ConfirmationResult.Success -> {
-                call.application.launch {
-                    sendNotificationEmail(
-                        mailApiKey,
-                        mailDomain,
-                        email = result.studentEmail,
-                        subject = "Your application has been confirmed!",
-                        text = """
-                            Your supervisor has confirmed your application for the topic: ${result.topicTitle}.
-                            Congratulations!
-                        """.trimIndent()
-                    )
-                }
-                call.respondText("Application confirmed! The student has been notified.")
-            }
-            SupervisorService.ConfirmationResult.AlreadyConfirmed ->
-                call.respond(HttpStatusCode.BadRequest, "Student already has a confirmed application.")
-            SupervisorService.ConfirmationResult.NoSlots ->
-                call.respond(HttpStatusCode.BadRequest, "No available slots for this topic.")
-            SupervisorService.ConfirmationResult.NotFound ->
-                call.respond(HttpStatusCode.BadRequest, "Invalid token or application not found.")
+        println(applicationId)
+        call.respond(HttpStatusCode.OK, supervisorService.confirmApplication(applicationId))
+    }
+
+    post("/supervisor/reject-application") {
+        val applicationId = call.request.queryParameters["applicationId"]?.toIntOrNull() ?: run {
+            call.respond(
+                HttpStatusCode.BadRequest, mapOf(
+                    "error" to "MISSING_APPLICATION_ID",
+                    "message" to "Please provide a valid application ID"
+                )
+            )
+            return@post
         }
+        println(applicationId)
+        call.respond(HttpStatusCode.OK, supervisorService.rejectApplication(applicationId))
     }
 }

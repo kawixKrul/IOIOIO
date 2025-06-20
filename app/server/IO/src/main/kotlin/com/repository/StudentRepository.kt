@@ -95,4 +95,11 @@ class StudentRepository {
             .innerJoin(studentUser, { Students.userId }, { studentUser[Users.id] })
                 ).select { Applications.studentId eq studentId }.toList()
     }
+
+    fun withdrawApplication(applicationId: Int) = transaction {
+        println("waht")
+        Applications.update({ Applications.id eq applicationId}) {
+            it[status] = 3
+        }
+    }
 }

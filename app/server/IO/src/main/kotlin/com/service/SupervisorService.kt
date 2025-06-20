@@ -71,24 +71,31 @@ class SupervisorService(private val repo: SupervisorRepository) {
         data object NotFound : ConfirmationResult()
     }
 
-    fun confirmApplication(token: String): ConfirmationResult {
-        val data = repo.getApplicationConfirmationData(token) ?: return ConfirmationResult.NotFound
+//    fun confirmApplication(token: String): ConfirmationResult {
+//        val data = repo.getApplicationConfirmationData(token) ?: return ConfirmationResult.NotFound
+//
+//        if (repo.studentHasConfirmed(data.studentId)) {
+//            return ConfirmationResult.AlreadyConfirmed
+//        }
+//        if (data.currentSlots <= 0) {
+//            return ConfirmationResult.NoSlots
+//        }
+//
+//        // Confirm the application
+//        repo.confirmApplication(data.appId)
+//        // Decrease slots for topic
+//        repo.decreaseAvailableSlots(data.topicId)
+//        // Reject other pending applications from student
+//        repo.rejectOtherPendingApplications(data.studentId, data.appId)
+//
+//        val studentEmail = repo.getStudentEmail(data.studentId) ?: return ConfirmationResult.NotFound
+//        return ConfirmationResult.Success(studentEmail, data.topicTitle)
+//    }
 
-        if (repo.studentHasConfirmed(data.studentId)) {
-            return ConfirmationResult.AlreadyConfirmed
-        }
-        if (data.currentSlots <= 0) {
-            return ConfirmationResult.NoSlots
-        }
-
-        // Confirm the application
-        repo.confirmApplication(data.appId)
-        // Decrease slots for topic
-        repo.decreaseAvailableSlots(data.topicId)
-        // Reject other pending applications from student
-        repo.rejectOtherPendingApplications(data.studentId, data.appId)
-
-        val studentEmail = repo.getStudentEmail(data.studentId) ?: return ConfirmationResult.NotFound
-        return ConfirmationResult.Success(studentEmail, data.topicTitle)
+    fun confirmApplication(applicationId: Int){
+        repo.confirmApplication(applicationId)
+    }
+    fun rejectApplication(applicationId: Int){
+        repo.rejectApplication(applicationId)
     }
 }
