@@ -1,18 +1,3 @@
-# Development stage
-FROM node:23-alpine AS dev
-
-WORKDIR /client_app
-
-COPY package*.json ./
-
-RUN npm ci
-
-COPY . .
-
-EXPOSE 3000
-
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
-
 # Build stage
 FROM node:23-alpine AS build_app
 
