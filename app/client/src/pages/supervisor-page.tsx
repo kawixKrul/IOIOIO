@@ -22,12 +22,15 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-import { useQuery} from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient} from "@tanstack/react-query"
 import { studentApi, supervisorApi } from "@/api/requests"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/hooks/useAuth"
 import { AddTopicDialog } from "@/components/AddTopicDialog"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import React from "react"
 
 export default function SupervisorPage() {
     const [activeTab, setActiveTab] = useState("other-topics")
@@ -139,19 +142,93 @@ export default function SupervisorPage() {
         );
     };
     
-    const SupervisorOtherTopicsTab = () => {
+   const SupervisorOtherTopicsTab = () => {
+    const [searchQuery, setSearchQuery] = React.useState("")
+    const [selectedDegree, setSelectedDegree] = React.useState<"bsc" | "msc" | "">("")
+    const [isSearching, setIsSearching] = React.useState(false)
+
+    // Fetch supervisor's applications to get their own topics
+    const supervisorApplicationsQuery = useQuery({
+        queryKey: ["supervisorApplications"],
+        queryFn: () => supervisorApi.getSupervisorApplications(),
+    })
+
+    const handleSearchSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (searchQuery.trim().length > 0) {
+            setIsSearching(true)
+        }
+    }
+
+    const searchQuery_data = useQuery({
+        queryKey: ["searchTopics", searchQuery, selectedDegree],
+        queryFn: () => studentApi.searchTopics(searchQuery, selectedDegree || undefined),
+        enabled: isSearching && searchQuery.trim().length > 0,
+    })
+    
+    const handleClearSearch = () => {
+        setSearchQuery("")
+        setSelectedDegree("")
+        setIsSearching(false)
+    }
+
+    // Get IDs of topics that belong to this supervisor
+    const supervisorTopicIds = React.useMemo(() => {
+        return supervisorTopicsQuery.data?.map(topic => topic.id) || []
+    }, [supervisorApplicationsQuery.data])
+
+    // Filter out supervisor's own topics
+    const currentTopicsData = isSearching ? searchQuery_data : topicsQuery
+    const displayTopics = (currentTopicsData.data || []).filter(topic => 
+        !supervisorTopicIds.includes(topic.id)
+    )
+
         return (
             <TabsContent value="other-topics">
-                {topicsQuery.isPending && <p>Loading topics...</p>}
-                {topicsQuery.isError && (
-                    <p className="text-red-500">Error: {topicsQuery.error.message}</p>
+                <div className="mb-6 space-y-4">
+                    <form onSubmit={handleSearchSubmit} className="flex gap-2">
+                        <Input
+                            type="text"
+                            placeholder="Search topics (e.g., machine learning, AI, web development)"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="flex-1"
+                        />
+                        <select
+                            value={selectedDegree}
+                            onChange={(e) => setSelectedDegree(e.target.value as 'bsc' | 'msc' | '')}
+                            className="px-3 py-2 border border-input bg-background rounded-md text-sm"
+                        >
+                            <option value="">All Degrees</option>
+                            <option value="bsc">BSc</option>
+                            <option value="msc">MSc</option>
+                        </select>
+                        <Button type="submit" disabled={!searchQuery.trim()}>
+                            Search
+                        </Button>
+                        {isSearching && (
+                            <Button type="button" variant="outline" onClick={handleClearSearch}>
+                                Clear
+                            </Button>
+                        )}
+                    </form>
+                    {isSearching && (
+                        <div className="text-sm text-muted-foreground">
+                            Searching for: "{searchQuery}" {selectedDegree && `(${selectedDegree.toUpperCase()})`}
+                        </div>
+                    )}
+                </div>
+
+                {currentTopicsData.isPending && <p>Loading topics...</p>}
+                {currentTopicsData.isError && (
+                    <p className="text-red-500">Error: {currentTopicsData.error.message}</p>
                 )}
-                {topicsQuery.isSuccess && topicsQuery.data.length === 0 && (
-                    <p>No topics available at the moment.</p>
+                {currentTopicsData.isSuccess && displayTopics.length === 0 && (
+                    <p>{isSearching ? "No topics found matching your search." : "No topics available at the moment."}</p>
                 )}
-                {topicsQuery.isSuccess && topicsQuery.data.length > 0 && (
+                {currentTopicsData.isSuccess && displayTopics.length > 0 && (
                     <div className="grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {topicsQuery.data.map((topic) => (
+                        {displayTopics.map((topic) => (
                             <Card key={topic.id}>
                                 <CardHeader>
                                     <CardTitle>{topic.title}</CardTitle>
@@ -204,50 +281,107 @@ export default function SupervisorPage() {
     }
 
     const SupervisorApplicationsTab = () => {
-        const { data: applications, isPending, isError, error, isSuccess } = supervisorApplicationsQuery;
-        return (
-            <TabsContent value="applications">
-                {isPending && <p>Loading your applications...</p>}
-                {isError && (
-                    <p className="text-red-500">Error: {error.message}</p>
-                )}
-                {isSuccess && applications.length === 0 && (
-                    <div className="flex flex-col items-center justify-center p-8">
-                        <p className="text-lg text-muted-foreground mb-4">Noone applied for your topics yet.</p>
-                
-                    </div>
-                )}
-                {isSuccess && applications.length > 0 && (
-                    <div className="grid auto-rows-min gap-4 md:grid-cols-2">
-                        {applications.map((application) => (
-                            <Card key={application.id}>
-                                <CardHeader>
-                                    <div className="flex justify-between items-start">
-                                        <CardTitle>{application.topicTitle}</CardTitle>
-                                        {renderApplicationStatus(application.status)}
-                                    </div>
-                                    <CardDescription>
-                                        Student: {application.student.name} {application.student.surname}
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <h4 className="text-xs font-semibold mb-1">Student's application message:</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                        {application.description || "No message provided"}
-                                    </p>
-                                </CardContent>
-                                <CardFooter className="flex justify-between">
-                                    <p className="text-xs text-muted-foreground">
-                                        Application ID: {application.id}
-                                    </p>
-                                </CardFooter>
-                            </Card>
-                        ))}
-                    </div>
-                )}
-            </TabsContent>
-        );
+    const queryClient = useQueryClient();
+    const { data: applications, isPending, isError, error, isSuccess } = supervisorApplicationsQuery;
+
+    const confirmMutation = useMutation({
+        mutationFn: (applicationId: number) => 
+            supervisorApi.confirm_application(applicationId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["supervisorApplications"] });
+            alert("Application confirmed successfully!");
+        },
+        onError: (error: Error) => {
+            alert(`Error: ${error.message}`);
+        }
+    });
+
+    const rejectMutation = useMutation({
+        mutationFn: (applicationId: number) => 
+            supervisorApi.reject_application(applicationId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["supervisorApplications"] });
+            alert("Application rejected successfully!");
+        },
+        onError: (error: Error) => {
+            alert(`Error: ${error.message}`);
+        }
+    });
+
+    const handleConfirm = (applicationId: number) => {
+        if (confirm("Are you sure you want to confirm this application?")) {
+            confirmMutation.mutate(applicationId);
+        }
     };
+
+    const handleReject = (applicationId: number) => {
+        if (confirm("Are you sure you want to reject this application?")) {
+            rejectMutation.mutate(applicationId);
+        }
+    };
+
+    return (
+        <TabsContent value="applications">
+            {isPending && <p>Loading your applications...</p>}
+            {isError && (
+                <p className="text-red-500">Error: {error.message}</p>
+            )}
+            {isSuccess && applications.length === 0 && (
+                <div className="flex flex-col items-center justify-center p-8">
+                    <p className="text-lg text-muted-foreground mb-4">No one applied for your topics yet.</p>
+                </div>
+            )}
+            {isSuccess && applications.length > 0 && (
+                <div className="grid auto-rows-min gap-4 md:grid-cols-2">
+                    {applications.map((application) => (
+                        <Card key={application.id}>
+                            <CardHeader>
+                                <div className="flex justify-between items-start">
+                                    <CardTitle>{application.topicTitle}</CardTitle>
+                                    {renderApplicationStatus(application.status)}
+                                </div>
+                                <CardDescription>
+                                    Student: {application.student.name} {application.student.surname}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <h4 className="text-xs font-semibold mb-1">Student's application message:</h4>
+                                <p className="text-sm text-muted-foreground">
+                                    {application.description || "No message provided"}
+                                </p>
+                            </CardContent>
+                            <CardFooter className="flex justify-between items-center">
+                                <p className="text-xs text-muted-foreground">
+                                    Application ID: {application.id}
+                                </p>
+                                {application.status === 0 && ( // Only show buttons for pending applications
+                                    <div className="flex gap-2">
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm"
+                                            onClick={() => handleConfirm(application.id)}
+                                            disabled={confirmMutation.isPending || rejectMutation.isPending}
+                                        >
+                                            {confirmMutation.isPending ? "Confirming..." : "Confirm"}
+                                        </Button>
+                                        <Button 
+                                            variant="destructive" 
+                                            size="sm"
+                                            onClick={() => handleReject(application.id)}
+                                            disabled={confirmMutation.isPending || rejectMutation.isPending}
+                                        >
+                                            {rejectMutation.isPending ? "Rejecting..." : "Reject"}
+                                        </Button>
+                                    </div>
+                                )}
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </div>
+            )}
+        </TabsContent>
+    );
+};
 
     return (
         <SidebarProvider>
