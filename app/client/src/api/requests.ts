@@ -60,11 +60,23 @@ export const studentApi = {
   },
 
   // getApplications: () => mockApplications,
-  getApplications : () => makeRequest("/student/applications", "GET"),
+  getApplications: (): Promise<ApplicationsResponse[]> => makeRequest("/student/applications", "GET"),
 
   // Apply for a thesis topic
   applyForTopic: (topicId: number, description: string): Promise<string> =>
     makeRequest("/student/apply", "POST", { topicId, description }),
+
+  withdraw_application: async (applicationId: Number) => {
+    try {
+      await makeRequest(
+        `/student/withdraw-application?applicationId=${applicationId}`,
+        "POST"
+      );
+    } catch (error) {
+      console.error("Failed to withdraw application:", error);
+      throw new Error("Failed to withdraw application!");
+    }
+  },
 }
 
 /**
@@ -94,6 +106,31 @@ export const supervisorApi = {
       throw new Error("Could not load topics");
     }
   },
+
+  confirm_application: async (applicationId: Number) => {
+    try {
+      await makeRequest(
+        `/supervisor/confirm-application?applicationId=${applicationId}`,
+        "POST"
+      );
+    } catch (error) {
+      console.error("Failed to confirm application:", error);
+      throw new Error("Failed to confirm application!");
+    }
+  },
+
+    reject_application: async (applicationId: Number) => {
+    try {
+      await makeRequest(
+        `/supervisor/reject-application?applicationId=${applicationId}`,
+        "POST"
+      );
+    } catch (error) {
+      console.error("Failed to reject application:", error);
+      throw new Error("Failed to reject application!");
+    }
+  },
+
 
   // getApplicationsBySupervisorId: (supervisorId: number): ApplicationsResponse[] => {
   //       return mockApplications.filter(application => application.promoter.id === supervisorId);
