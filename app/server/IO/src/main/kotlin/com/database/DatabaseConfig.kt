@@ -46,6 +46,18 @@ fun createTables() {
     }
 }
 
+fun alterTables() {
+    transaction {
+        try {
+            exec("ALTER TABLE IF EXISTS sessions ALTER COLUMN ip_address TYPE VARCHAR(256)")
+            
+            println("Tables altered successfully")
+        } catch (e: Exception) {
+            println("Error altering tables: ${e.message}")
+        }
+    }
+}
+
 fun createInitialAdmin() {
     transaction {
         val hasAdmin = Users.select { Users.role eq "admin" }.count() > 0

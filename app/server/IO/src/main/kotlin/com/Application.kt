@@ -3,6 +3,7 @@ package com
 import com.database.connectToDatabase
 import com.database.createInitialAdmin
 import com.database.createTables
+import com.database.alterTables
 import com.repository.*
 import com.routers.*
 import com.service.*
@@ -63,6 +64,7 @@ fun Application.module() {
 
     connectToDatabase()
     createTables()
+    alterTables()
     println("Database connected and all tables are created.")
 
     createInitialAdmin()
