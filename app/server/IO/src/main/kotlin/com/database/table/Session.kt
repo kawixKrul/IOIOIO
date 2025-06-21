@@ -9,5 +9,5 @@ object Sessions : IntIdTable("sessions") {
     val createdAt = datetime("created_at")
     val expiresAt = datetime("expires_at")
     val userAgent = varchar("user_agent", 512).nullable() // optional, for security/tracking
-    val ipAddress = varchar("ip_address", 45).nullable()  // optional, for security/tracking (IPv6 max length)
+    val ipAddress = varchar("ip_address", 256).nullable()  // optional, for security/tracking (IPv6 max length)
 }

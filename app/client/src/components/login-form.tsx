@@ -10,38 +10,36 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useMutation } from '@tanstack/react-query';
+import { authApi } from '@/api/requests';
 
 export function LoginForm({
     className,
     onToggleForm,
     ...props
 }: React.ComponentPropsWithoutRef<"div"> & { onToggleForm: () => void }) {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [email, setEmail] = React.useState("");
+    const [password, setPassword] = React.useState("");
     const navigate = useNavigate();
-    const { login } = useAuth();
 
-    const handleLogin = async (event: React.FormEvent) => {
-        event.preventDefault();
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            const profile = await login(email, password);
-            console.log(profile);
-            navigate("/supervisor"); // I do not fully understand what is going on. Looks like it is trying to navigate 
-            //everyone to /supervisor but since the student cannot do it it just simply renavigate it to /user instead 
-            //well it is tricky and i do not know why does it work but since it does i do not want to touch that shit ever again. 
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Login failed");
-        } finally {
-            setIsLoading(false);
+    const { mutate, isPending, error } = useMutation({
+        mutationFn: async (credentials: any) => {
+            return await authApi.login(credentials);
+        },
+        onSuccess: (data) => {
+            // Assuming your API returns user data including role
+            const redirectPath = data.role === 'supervisor' ? '/supervisor' : '/user';
+            navigate(redirectPath);
+        },
+        onError: (err: Error) => {
+            console.error('Login error:', err);
         }
+    });
+
+    const handleSubmit = (event: React.FormEvent) => {
+        event.preventDefault();
+        mutate({ email, password });
     };
 
     return (
@@ -54,7 +52,8 @@ export function LoginForm({
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleLogin}>                        <div className="flex flex-col gap-6">
+                    <form onSubmit={handleSubmit}>
+                        <div className="flex flex-col gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email</Label>
                                 <Input
@@ -62,9 +61,9 @@ export function LoginForm({
                                     type="email"
                                     placeholder="name@agh.pl"
                                     value={email}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     required
-                                    disabled={isLoading}
+                                    disabled={isPending}
                                 />
                             </div>
                             <div className="grid gap-2">
@@ -82,18 +81,25 @@ export function LoginForm({
                                     type="password"
                                     required
                                     value={password}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                                    disabled={isLoading}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    disabled={isPending}
                                 />
                             </div>
-                            <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? "Logging in..." : "Login"}
+                            <Button type="submit" className="w-full" disabled={isPending}>
+                                {isPending ? "Logging in..." : "Login"}
                             </Button>
-                            <Button type="button" onClick={onToggleForm} className="w-full" disabled={isLoading}>
+                            <Button
+                                type="button"
+                                onClick={onToggleForm}
+                                className="w-full"
+                                disabled={isPending}
+                            >
                                 Don&apos;t have an account?
                             </Button>
                             {error && (
-                                <p className="text-sm text-red-500 mt-2">{error}</p>
+                                <p className="text-sm text-red-500 mt-2">
+                                    {error.message || "Login failed"}
+                                </p>
                             )}
                         </div>
                     </form>
