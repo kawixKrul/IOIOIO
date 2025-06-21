@@ -1,6 +1,22 @@
+version: '3.8'
+
 services:
+  proxy:
+    image: kawixking/ioioio-proxy:latest
+    depends_on:
+      - kotlin-backend
+      - vite-frontend
+    platform: linux/amd64
+    ports:
+      - "80:80"
+    expose:
+      - "80"
+    labels:
+      - "azure.websites.containerPort=80"
+
   db:
     image: postgres:15
+    platform: linux/amd64
     container_name: postgres-db
     restart: always
     environment:
@@ -9,35 +25,26 @@ services:
       POSTGRES_DB: moja_baza
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wiktor -d moja_baza"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+    # ports:
+    #   - "5432:5432"
 
   backend:
-    build:
-      context: ./app/server/IO
+    image: kawixking/ioioio-backend:latest
     container_name: kotlin-backend
+    platform: linux/amd64
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     environment:
       DB_URL: jdbc:postgresql://db:5432/moja_baza
       DB_USER: wiktor
       DB_PASSWORD: tajnehaslo
-    ports:
-      - "8080:8080"
 
   frontend:
-    build:
-      context: ./app/client
-    container_name: nginx-frontend
-    ports:
-      - "3000:80"
+    environment:
+      - VITE_API_BASE_URL=https://ioioio-cwekbvhnbudqbmbr.northeurope-01.azurewebsites.net/api
+    image: kawixking/ioioio-frontend:latest
+    container_name: vite-frontend
+    platform: linux/amd64
     depends_on:
       - backend
 

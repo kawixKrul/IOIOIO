@@ -2,7 +2,8 @@ import { ApplicationsResponse, ThesisTopicResponse, LoginCredentials, RegisterDa
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
 // Base URL for your backend API
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+// production url
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://ioioio-cwekbvhnbudqbmbr.northeurope-01.azurewebsites.net/api";
 
 export async function makeRequest(
   endpoint: string,
@@ -11,7 +12,7 @@ export async function makeRequest(
   headers?: Record<string, string>
 ) {
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
-  
+
   const response = await fetch(url, {
     method,
     headers: {
@@ -23,7 +24,7 @@ export async function makeRequest(
   });
 
   if (response.status === 401) {
-    window.location.href = '/'; 
+    window.location.href = '/';
     throw new Error('Session expired. Please login again.');
   }
 
@@ -37,7 +38,7 @@ export async function makeRequest(
   if (contentType && contentType.includes('application/json')) {
     return response.json();
   }
-  
+
   return response.text();
 }
 
@@ -97,7 +98,7 @@ export const supervisorApi = {
   }) => makeRequest("/supervisor/topics", "POST", topicData),
 
   getSupervisorTopics: async (): Promise<ThesisTopicResponse[]> => {
-      //return mockTopics.filter(topic => topic.promoter.id === supervisorId);
+    //return mockTopics.filter(topic => topic.promoter.id === supervisorId);
     try {
       const response = await makeRequest(`/supervisor/topics`, "GET");
       return response as ThesisTopicResponse[];
@@ -119,7 +120,7 @@ export const supervisorApi = {
     }
   },
 
-    reject_application: async (applicationId: Number) => {
+  reject_application: async (applicationId: Number) => {
     try {
       await makeRequest(
         `/supervisor/reject-application?applicationId=${applicationId}`,
@@ -136,7 +137,7 @@ export const supervisorApi = {
   //       return mockApplications.filter(application => application.promoter.id === supervisorId);
   // }
   getSupervisorApplications: async (): Promise<ApplicationsResponse[]> => {
-      //return mockTopics.filter(topic => topic.promoter.id === supervisorId);
+    //return mockTopics.filter(topic => topic.promoter.id === supervisorId);
     try {
       const response = await makeRequest(`/supervisor/applications`, "GET");
       return response as ApplicationsResponse[];
@@ -171,8 +172,8 @@ export const authApi = {
     return {
       id: response.id,
       email: response.email,
-      firstName: response.name, 
-      lastName: response.surname, 
+      firstName: response.name,
+      lastName: response.surname,
       role: response.role
     };
   },
