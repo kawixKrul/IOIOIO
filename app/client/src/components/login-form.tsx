@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from '@tanstack/react-query';
-import { authApi } from '@/api/requests';
+import { useAuth } from '@/hooks/useAuth';
 
 export function LoginForm({
     className,
@@ -22,14 +22,21 @@ export function LoginForm({
     const [email, setEmail] = React.useState("");
     const [password, setPassword] = React.useState("");
     const navigate = useNavigate();
+    const { login, user } = useAuth();
 
     const { mutate, isPending, error } = useMutation({
         mutationFn: async (credentials: any) => {
-            return await authApi.login(credentials);
+            await login(credentials.email, credentials.password);
+            return user;
         },
-        onSuccess: (data) => {
-            // Assuming your API returns user data including role
-            const redirectPath = data.role === 'supervisor' ? '/supervisor' : '/user';
+        onSuccess: (user) => {
+            if (!user) return;
+
+            // Redirect based on role
+            const redirectPath =
+                user.role === 'supervisor' || user.role === 'admin'
+                    ? '/supervisor'
+                    : '/user';
             navigate(redirectPath);
         },
         onError: (err: Error) => {
@@ -41,6 +48,7 @@ export function LoginForm({
         event.preventDefault();
         mutate({ email, password });
     };
+
 
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>

@@ -37,7 +37,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Initial auth check on mount
-
   // Background session checks (e.g., every 5 minutes)
 
   const login = async (email: string, password: string): Promise<void> => {
