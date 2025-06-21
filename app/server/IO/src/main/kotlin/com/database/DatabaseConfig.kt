@@ -80,7 +80,7 @@ fun createInitialAdmin() {
         }
 
         val hasSupervisor = Users.select { Users.role eq "supervisor" }.count() > 0
-        if (hasSupervisor) {
+        if (!hasSupervisor) {
             val supervisorUserId = Users.insertAndGetId {
                 it[email] = "supervisor@agh.edu.pl"
                 it[passwordHash] = hashPassword("supervisor123")
@@ -99,7 +99,7 @@ fun createInitialAdmin() {
         }
 
         val hasStudent = Users.select { Users.role eq "student" }.count() > 0
-        if (hasStudent) {
+        if (!hasStudent) {
             val studentUserId = Users.insertAndGetId {
                 it[email] = "student@agh.edu.pl"
                 it[passwordHash] = hashPassword("student123")
