@@ -11,12 +11,14 @@ COPY . .
 
 RUN npx vite build
 
-# Production stage
-FROM nginx:alpine
+FROM node:23-alpine
+WORKDIR /app
 
-COPY --from=build_app /client_app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build_app /client_app/dist ./dist
+
+RUN npm install -g serve
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# Start the server
+CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:80"]

@@ -1,6 +1,19 @@
 version: '3.8'
 
 services:
+  proxy:
+    image: kawixking/ioioio-proxy:latest
+    depends_on:
+      - kotlin-backend
+      - vite-frontend
+    platform: linux/amd64
+    ports:
+      - "80:80"
+    expose:
+      - "80"
+    labels:
+      - "azure.websites.containerPort=80"
+
   db:
     image: postgres:15
     platform: linux/amd64
@@ -25,19 +38,15 @@ services:
       DB_URL: jdbc:postgresql://db:5432/moja_baza
       DB_USER: wiktor
       DB_PASSWORD: tajnehaslo
-    ports:
-      - "8080:8080"
 
   frontend:
     environment:
-      - VITE_API_BASE_URL=/api
+      - VITE_API_BASE_URL=https://ioioio-cwekbvhnbudqbmbr.northeurope-01.azurewebsites.net/api
     image: kawixking/ioioio-frontend:latest
     container_name: vite-frontend
     platform: linux/amd64
     depends_on:
       - backend
-    ports:
-      - "80:80" # Azure expects web apps to be on port 80
 
 volumes:
   pgdata:
